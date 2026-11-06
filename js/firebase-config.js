@@ -1,18 +1,5 @@
-
-/* Frikital CG · Configuración Firebase */
+/* Configuración pública (no es secreta). Completar con la URL de tu Realtime Database. v1.0.0
+   Ejemplo: databaseURL: "https://TU-PROYECTO-default-rtdb.firebaseio.com"
+   También puede pasarse por URL: salida.html?db=...&sala=... */
 window.CG = window.CG || {};
-
-window.CG.cfg = {
-  sala: "frikital",
-  databaseURL: "https://frikital-default-rtdb.firebaseio.com",
-
-  firebase: {
-    apiKey: "AIzaSyDuusjYWCxzAjCAmN14SS-TVoUY0cxsoLE",
-    authDomain: "frikital.firebaseapp.com",
-    databaseURL: "https://frikital-default-rtdb.firebaseio.com",
-    projectId: "frikital",
-    storageBucket: "frikital.firebasestorage.app",
-    messagingSenderId: "596351857441",
-    appId: "1:596351857441:web:94f319b73e3abdce0c4460"
-  }
-};
+window.CG.cfg = { databaseURL: "PENDIENTE_URL_REALTIME_DATABASE", sala: "frikital" };
