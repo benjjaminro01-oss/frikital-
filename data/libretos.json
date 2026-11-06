@@ -1,0 +1,818 @@
+{
+ "1": {
+  "title": "STREAMING 1 · APERTURA Y RECORRIDO",
+  "sub": "Presentación del festival y conexión con el público | Invitados: Conductor/a + recorrido por el recinto (si está disponible) | Duración objetivo: 18 min aprox.",
+  "steps": [
+   {
+    "tc": "00:00",
+    "dur": "00:20",
+    "block": "PREVIO / ESPERA",
+    "cam": "CARTÓN FIJO",
+    "text": "Sin diálogo. Música de espera opcional a nivel bajo.",
+    "graphic": "CARTÓN INICIO: logo Frikital Fest 2026.",
+    "notes": "Dirección confirma audio, cámaras y señal de gráfica."
+   },
+   {
+    "tc": "00:20",
+    "dur": "00:15",
+    "block": "APERTURA",
+    "cam": "MOTION GRAPHIC",
+    "text": "Música de identidad. Sin voz durante el primer golpe gráfico.",
+    "graphic": "GRÁFICA APERTURA 10–15 s; regresar a CAM 2.",
+    "notes": "Cortar a cámara al finalizar el motion."
+   },
+   {
+    "tc": "00:35",
+    "dur": "01:20",
+    "block": "BIENVENIDA",
+    "cam": "CAM 2 · PLANO GENERAL",
+    "text": "CONDUCTOR/A: “¡Bienvenidas y bienvenidos a Frikital Fest 2026! Estamos en Santo Tomás Talca para vivir una jornada dedicada a los videojuegos, el cosplay, la ilustración, la ciencia ficción, los juegos de mesa y la tecnología.”",
+    "graphic": "Lower third: “FRIKITAL FEST 2026 · EN VIVO”.",
+    "notes": "Saludo energético; dejar reacción del público si se escucha."
+   },
+   {
+    "tc": "01:55",
+    "dur": "01:30",
+    "block": "CONTEXTO",
+    "cam": "CAM 3 o CAM 1 · PLANO INDIVIDUAL",
+    "text": "“Esta es la segunda edición del festival. La primera se realizó en 2024 y convocó a más de mil personas. Para este año, la organización espera superar los 1.500 asistentes.”",
+    "graphic": "Insertar gráfica con datos: “2.ª edición / Desde las 10:00 / Santo Tomás Talca”.",
+    "notes": "Presentar la cifra como expectativa de la organización, no como asistencia confirmada."
+   },
+   {
+    "tc": "03:25",
+    "dur": "01:30",
+    "block": "ORGANIZACIÓN",
+    "cam": "CAM 2",
+    "text": "“Frikital Fest es organizado por las áreas de Comunicación y Diseño e Informática de Santo Tomás Talca. Además de reunir a distintas comunidades, permite que estudiantes participen en una producción real y apliquen conocimientos de diseño, comunicación, audiovisual, marketing y tecnología.”",
+    "graphic": "Placa: “Organizan: Área de Comunicación y Diseño + Área de Informática”.",
+    "notes": "No cubrir logos de organizadores con lower thirds."
+   },
+   {
+    "tc": "04:55",
+    "dur": "02:00",
+    "block": "MAPA DE EXPERIENCIAS",
+    "cam": "CAM 2 + APOYOS",
+    "text": "“Durante el día pueden encontrarse con videojuegos, cosplay, ilustración, ciencia ficción, juegos de mesa y cartas coleccionables, tiendas especializadas y experiencias de robótica.”",
+    "graphic": "B-ROLL: planos recurso de stands, público y actividades disponibles.",
+    "notes": "Usar solo imágenes efectivamente captadas en el evento."
+   },
+   {
+    "tc": "06:55",
+    "dur": "02:00",
+    "block": "VIDEOJUEGOS Y COMUNIDADES",
+    "cam": "CAM 2 / B-ROLL",
+    "text": "“Entre las comunidades participantes están Super Smash Bros. y League of Legends Talca, además de agrupaciones vinculadas al universo de Star Wars. Cada comunidad trae su propia energía y una manera distinta de compartir esta cultura.”",
+    "graphic": "B-ROLL de videojuegos y comunidades; rótulos solo si se identifica correctamente cada grupo.",
+    "notes": "Si una comunidad no está en cuadro, usar plano general del recinto."
+   },
+   {
+    "tc": "08:55",
+    "dur": "02:00",
+    "block": "COSPLAY E ILUSTRACIÓN",
+    "cam": "CAM 2 / CAM 1 / CAM 3",
+    "text": "“El cosplay y la ilustración también tienen un lugar importante. Hoy participa el ilustrador Jackfredo y Mume estará animando distintas instancias de la jornada.”",
+    "graphic": "B-ROLL de cosplay e ilustración; posible identificación de Jackfredo si está confirmado en el recinto.",
+    "notes": "Evitar atribuir actividad específica sin confirmación del programa."
+   },
+   {
+    "tc": "10:55",
+    "dur": "02:00",
+    "block": "ROBÓTICA E INNOVACIÓN",
+    "cam": "CAM 2 / B-ROLL",
+    "text": "“La tecnología se hace presente con experiencias de robótica y batallas de robots, una oportunidad para ver cómo la creatividad y la ingeniería se encuentran en una experiencia abierta al público.”",
+    "graphic": "B-ROLL de robots; sonido ambiente breve si aporta.",
+    "notes": "No superponer música sobre sonidos relevantes de la demostración."
+   },
+   {
+    "tc": "12:55",
+    "dur": "02:00",
+    "block": "APRENDIZAJE EN TERRENO",
+    "cam": "CAM 2",
+    "text": "“Este festival también se construye desde las aulas. Estudiantes de Diseño Gráfico, Comunicación Audiovisual Digital e Ingeniería en Informática participan en distintas tareas de producción, conectando su formación con una experiencia real.”",
+    "graphic": "Placa: “Aprendizaje práctico · Trabajo colaborativo · Comunidad”.",
+    "notes": "Mantener mensaje institucional sin convertirlo en discurso extenso."
+   },
+   {
+    "tc": "14:55",
+    "dur": "02:00",
+    "block": "INVITACIÓN AL RECORRIDO",
+    "cam": "CAM 2",
+    "text": "“Los invitamos a seguir recorriendo Frikital Fest 2026, conocer las comunidades, conversar con los expositores y descubrir las actividades que se están desarrollando en Santo Tomás Talca.”",
+    "graphic": "CAM 2 con fondo del festival; si se puede, corte a público.",
+    "notes": "Conductor/a mira a cámara para cerrar el bloque."
+   },
+   {
+    "tc": "16:55",
+    "dur": "00:45",
+    "block": "CIERRE",
+    "cam": "CAM 2",
+    "text": "“Esto es Frikital Fest 2026. La aventura geek comienza aquí. Gracias por acompañarnos; seguimos con más conversaciones, comunidades y experiencias durante esta jornada.”",
+    "graphic": "MOTION GRAPHIC CIERRE 10–15 s y CARTÓN FIJO si corresponde.",
+    "notes": "Salida con música; preparar siguiente streaming."
+   }
+  ]
+ },
+ "2": {
+  "title": "STREAMING 2 · COMUNIDAD JEDI + LUDOPALOOZA",
+  "sub": "Comunidades, ciencia ficción y juegos de mesa | Invitados: Representantes de Comunidad Jedi y Ludopalooza | Duración objetivo: 18 min aprox.",
+  "steps": [
+   {
+    "tc": "00:00",
+    "dur": "00:20",
+    "block": "PREVIO",
+    "cam": "CARTÓN FIJO",
+    "text": "Sin diálogo.",
+    "graphic": "Cartón fijo inicio Frikital Fest 2026.",
+    "notes": "Confirmar invitados y orden de entrada."
+   },
+   {
+    "tc": "00:20",
+    "dur": "00:15",
+    "block": "APERTURA",
+    "cam": "MOTION GRAPHIC",
+    "text": "Música de identidad.",
+    "graphic": "Motion graphic 10–15 s.",
+    "notes": "Cortar a CAM 2."
+   },
+   {
+    "tc": "00:35",
+    "dur": "01:20",
+    "block": "BIENVENIDA",
+    "cam": "CAM 2 · PLANO GENERAL",
+    "text": "“Continuamos en vivo desde Frikital Fest 2026, el punto de encuentro para quienes disfrutan los videojuegos, la fantasía, la ciencia ficción y la cultura geek. Hoy conoceremos a dos comunidades que comparten sus aficiones con públicos de distintas edades.”",
+    "graphic": "Lower third: “COMUNIDADES GEEK”.",
+    "notes": "Presentar a ambos grupos brevemente."
+   },
+   {
+    "tc": "01:55",
+    "dur": "01:00",
+    "block": "PRESENTACIÓN COMUNIDAD JEDI",
+    "cam": "CAM 3 → CAM 1 según posición",
+    "text": "“Nos acompañan representantes de la Comunidad Jedi, que mantiene vivo el universo de Star Wars a través de actividades y experiencias para sus seguidores.”",
+    "graphic": "Lower third con nombre y rol, solo tras confirmación.",
+    "notes": "Conductor/a pregunta mirando al invitado."
+   },
+   {
+    "tc": "02:55",
+    "dur": "02:00",
+    "block": "ENTREVISTA JEDI",
+    "cam": "Plano individual del invitado que responde",
+    "text": "P1: “¿Cómo nació la agrupación y qué les une al universo de Star Wars?” P2: “¿Qué actividades están realizando hoy en Frikital Fest?”",
+    "graphic": "CAM 2 para reacciones; volver al invitado en respuestas.",
+    "notes": "Dejar respuesta de 45–60 s por pregunta."
+   },
+   {
+    "tc": "04:55",
+    "dur": "02:00",
+    "block": "ENTREVISTA JEDI",
+    "cam": "Plano individual + general",
+    "text": "P3: “¿Por qué creen que Star Wars sigue conectando con nuevas generaciones?” P4: “¿Qué le dirían a alguien que quiere integrarse a una comunidad temática?”",
+    "graphic": "Sin gráfica adicional; priorizar rostros y reacciones.",
+    "notes": "Si una respuesta se extiende, omitir una pregunta secundaria."
+   },
+   {
+    "tc": "06:55",
+    "dur": "01:00",
+    "block": "TRANSICIÓN A LUDOPALOOZA",
+    "cam": "CAM 2",
+    "text": "“De una galaxia muy, muy lejana, pasamos a una mesa donde la imaginación y la estrategia también son protagonistas. Nos acompaña Ludopalooza.”",
+    "graphic": "Lower third de Ludopalooza con representante y cargo confirmados.",
+    "notes": "Transición ágil."
+   },
+   {
+    "tc": "07:55",
+    "dur": "02:00",
+    "block": "ENTREVISTA LUDOPALOOZA",
+    "cam": "Plano individual del representante",
+    "text": "P1: “¿Qué es Ludopalooza y qué busca promover?” P2: “¿Qué juegos están llamando la atención del público hoy?”",
+    "graphic": "B-ROLL de juegos de mesa si está disponible.",
+    "notes": "No afirmar títulos concretos sin verificación."
+   },
+   {
+    "tc": "09:55",
+    "dur": "02:00",
+    "block": "ENTREVISTA LUDOPALOOZA",
+    "cam": "Plano individual + general",
+    "text": "P3: “¿Cómo ha cambiado la comunidad de juegos de mesa en los últimos años?” P4: “¿Por qué los juegos de mesa siguen vigentes en una época tan digital?”",
+    "graphic": "CAM 2 para reacción compartida.",
+    "notes": "Permitir que el invitado dé ejemplos."
+   },
+   {
+    "tc": "11:55",
+    "dur": "02:00",
+    "block": "PARTICIPACIÓN DEL PÚBLICO",
+    "cam": "CAM 2 / recurso de mesa",
+    "text": "“Si alguien está empezando, ¿qué tipo de juego recomendarían para jugar con amigos o en familia?” Seguimiento: “¿Dónde puede encontrarlos o seguir sus actividades?”",
+    "graphic": "Gráfica de redes sociales solo si el dato se entrega y confirma.",
+    "notes": "No inventar usuario de redes ni canales de contacto."
+   },
+   {
+    "tc": "13:55",
+    "dur": "02:00",
+    "block": "CONVERSACIÓN CRUZADA",
+    "cam": "CAM 2",
+    "text": "“Aunque sus universos son distintos, ambas comunidades generan encuentro, identidad y participación. ¿Qué valor tiene compartir estas aficiones presencialmente?”",
+    "graphic": "Plano general de ambos invitados.",
+    "notes": "Si el tiempo aprieta, convertir en una pregunta breve para ambos."
+   },
+   {
+    "tc": "15:55",
+    "dur": "01:00",
+    "block": "CIERRE",
+    "cam": "CAM 2",
+    "text": "“Gracias a Comunidad Jedi y Ludopalooza por mostrarnos cómo las comunidades mantienen viva la imaginación y generan espacios para compartir. Frikital Fest continúa con más actividades durante la jornada.”",
+    "graphic": "Motion graphic cierre 10–15 s; cartón fijo.",
+    "notes": "Cerrar con ambos invitados en plano."
+   }
+  ]
+ },
+ "3": {
+  "title": "STREAMING 3 · DARÍO CUESTA",
+  "sub": "Industrias creativas y aprendizaje práctico | Invitados: Darío Cuesta, Director Nacional Área Comunicación y Diseño Santo Tomás (confirmar cargo vigente) | Duración objetivo: 18 min aprox.",
+  "steps": [
+   {
+    "tc": "00:00",
+    "dur": "00:20",
+    "block": "PREVIO",
+    "cam": "CARTÓN FIJO",
+    "text": "Sin diálogo.",
+    "graphic": "Cartón fijo inicio.",
+    "notes": "Confirmar nombre y cargo con producción."
+   },
+   {
+    "tc": "00:20",
+    "dur": "00:15",
+    "block": "APERTURA",
+    "cam": "MOTION GRAPHIC",
+    "text": "Música de identidad.",
+    "graphic": "Motion graphic apertura.",
+    "notes": "Cortar a CAM 2."
+   },
+   {
+    "tc": "00:35",
+    "dur": "01:30",
+    "block": "INTRODUCCIÓN",
+    "cam": "CAM 2",
+    "text": "“Frikital Fest no es solamente una experiencia de entretención. Aquí convergen creatividad, innovación, tecnología y formación profesional. Gran parte de lo que vemos es posible gracias al trabajo de estudiantes, docentes y equipos de producción.”",
+    "graphic": "Lower third: “FRIKITAL FEST 2026”.",
+    "notes": "Introducción institucional breve."
+   },
+   {
+    "tc": "02:05",
+    "dur": "01:00",
+    "block": "PRESENTACIÓN INVITADO",
+    "cam": "Plano individual de Darío",
+    "text": "“Nos acompaña Darío Cuesta, Director Nacional del Área de Comunicación y Diseño de Santo Tomás. Gracias por estar con nosotros en esta jornada.”",
+    "graphic": "Lower third con cargo confirmado.",
+    "notes": "Confirmar antes de emisión cualquier descripción adicional de trayectoria."
+   },
+   {
+    "tc": "03:05",
+    "dur": "02:00",
+    "block": "ENTREVISTA · INDUSTRIAS CREATIVAS",
+    "cam": "Plano invitado",
+    "text": "P1: “¿Cómo observa el desarrollo de las industrias creativas en Chile y qué oportunidades ve en regiones?”",
+    "graphic": "CAM 2 para escucha y reacción.",
+    "notes": "Repregunta opcional: “¿Qué condiciones ayudan a que esos proyectos crezcan?”"
+   },
+   {
+    "tc": "05:05",
+    "dur": "02:00",
+    "block": "FORMACIÓN AUDIOVISUAL",
+    "cam": "Plano invitado",
+    "text": "P2: “Desde su experiencia en proyectos audiovisuales, ¿qué habilidades son fundamentales para quienes se están formando como realizadores?”",
+    "graphic": "Insertar recursos de estudiantes trabajando si están disponibles.",
+    "notes": "No atribuir premios o fondos específicos sin confirmación."
+   },
+   {
+    "tc": "07:05",
+    "dur": "02:00",
+    "block": "EVENTOS COMO AULA",
+    "cam": "Plano general → invitado",
+    "text": "P3: “¿Qué valor tienen eventos como Frikital Fest dentro de la formación de los estudiantes?” P4: “¿Qué se aprende al participar en una producción real, más allá de las clases?”",
+    "graphic": "CAM 2 al formular; individual en respuesta.",
+    "notes": "Buscar ejemplos concretos del festival."
+   },
+   {
+    "tc": "09:05",
+    "dur": "02:00",
+    "block": "OPORTUNIDADES PROFESIONALES",
+    "cam": "Plano invitado",
+    "text": "P5: “¿Qué oportunidades existen hoy para jóvenes interesados en comunicación audiovisual, diseño y creación de contenidos?”",
+    "graphic": "Lower third permanece solo durante la presentación inicial; evitar saturar.",
+    "notes": "Respuesta orientada a estudiantes y público general."
+   },
+   {
+    "tc": "11:05",
+    "dur": "02:00",
+    "block": "TECNOLOGÍA E IA",
+    "cam": "Plano invitado",
+    "text": "P6: “¿Cómo están cambiando las herramientas digitales y la inteligencia artificial los procesos creativos?” P7: “¿Qué capacidades humanas seguirán siendo importantes en ese escenario?”",
+    "graphic": "CAM 2 para reacción; individual para respuesta.",
+    "notes": "Pregunta abierta; no presuponer una postura del invitado."
+   },
+   {
+    "tc": "13:05",
+    "dur": "02:00",
+    "block": "CONSEJO A FUTUROS CREADORES",
+    "cam": "Plano individual",
+    "text": "“¿Qué consejo le daría a una persona que quiere desarrollar su primer proyecto audiovisual o creativo?”",
+    "graphic": "Dar tiempo para una respuesta inspiradora y concreta.",
+    "notes": "Si hay tiempo, pedir una acción práctica para comenzar."
+   },
+   {
+    "tc": "15:05",
+    "dur": "02:00",
+    "block": "BALANCE Y PROYECCIÓN",
+    "cam": "CAM 2",
+    "text": "“¿Qué le gustaría que los estudiantes se lleven de una experiencia como esta?” Seguimiento: “¿Qué oportunidades espera que se abran a partir de la colaboración entre carreras?”",
+    "graphic": "Plano general compartido.",
+    "notes": "No prometer iniciativas futuras no anunciadas."
+   },
+   {
+    "tc": "17:05",
+    "dur": "00:40",
+    "block": "CIERRE",
+    "cam": "CAM 2",
+    "text": "“Muchas gracias, Darío, por compartir su mirada sobre la formación y las industrias creativas. Frikital Fest continúa demostrando cómo el aprendizaje puede conectarse con experiencias abiertas a la comunidad.”",
+    "graphic": "Motion graphic cierre + cartón fijo.",
+    "notes": "Cierre musical."
+   }
+  ]
+ },
+ "4": {
+  "title": "STREAMING 4 · LUIS GALÁZ",
+  "sub": "Informática, robótica e innovación | Invitados: Luis Galáz, Director de Carrera Área Informática (confirmar cargo vigente) | Duración objetivo: 18 min aprox.",
+  "steps": [
+   {
+    "tc": "00:00",
+    "dur": "00:20",
+    "block": "PREVIO",
+    "cam": "CARTÓN FIJO",
+    "text": "Sin diálogo.",
+    "graphic": "Cartón fijo inicio.",
+    "notes": "Confirmar invitado y pronunciación del apellido."
+   },
+   {
+    "tc": "00:20",
+    "dur": "00:15",
+    "block": "APERTURA",
+    "cam": "MOTION GRAPHIC",
+    "text": "Música de identidad.",
+    "graphic": "Motion graphic apertura.",
+    "notes": "Cortar a CAM 2."
+   },
+   {
+    "tc": "00:35",
+    "dur": "01:20",
+    "block": "INTRODUCCIÓN",
+    "cam": "CAM 2",
+    "text": "“Uno de los atractivos de Frikital Fest es la conexión entre la cultura geek y la tecnología. Videojuegos, robótica y programación despiertan curiosidad y permiten acercarse a distintas áreas de la informática.”",
+    "graphic": "Lower third: “TECNOLOGÍA E INNOVACIÓN”.",
+    "notes": "Usar tono accesible para público general."
+   },
+   {
+    "tc": "01:55",
+    "dur": "01:00",
+    "block": "PRESENTACIÓN INVITADO",
+    "cam": "Plano individual de Luis",
+    "text": "“Para conversar sobre el papel de la tecnología en esta jornada, nos acompaña Luis Galáz, Director de Carrera del Área Informática de Santo Tomás.”",
+    "graphic": "Lower third con cargo confirmado.",
+    "notes": "Confirmar cargo antes de transmisión."
+   },
+   {
+    "tc": "02:55",
+    "dur": "02:00",
+    "block": "PAPEL DE INFORMÁTICA",
+    "cam": "Plano invitado",
+    "text": "P1: “¿Qué papel cumple el Área de Informática dentro de Frikital Fest?” P2: “¿Cómo se vinculan las actividades del festival con lo que aprenden los estudiantes?”",
+    "graphic": "CAM 2 para reacción.",
+    "notes": "Pedir ejemplo concreto si la respuesta es general."
+   },
+   {
+    "tc": "04:55",
+    "dur": "02:00",
+    "block": "ROBÓTICA",
+    "cam": "Plano invitado + B-ROLL",
+    "text": "P3: “¿Qué podrán descubrir los asistentes en las experiencias de robótica y las batallas de robots?”",
+    "graphic": "Insertar recursos de robots solo si están disponibles.",
+    "notes": "Evitar explicar reglas de competencia que no estén confirmadas."
+   },
+   {
+    "tc": "06:55",
+    "dur": "02:00",
+    "block": "VIDEOJUEGOS Y DESARROLLO",
+    "cam": "Plano invitado",
+    "text": "P4: “¿Qué relación existe entre la informática, los videojuegos y la producción audiovisual?” P5: “¿Qué áreas de la informática suelen estar detrás de una experiencia interactiva?”",
+    "graphic": "CAM 2 en pregunta; individual en respuesta.",
+    "notes": "Buscar ejemplos simples: software, diseño de sistemas, interacción."
+   },
+   {
+    "tc": "08:55",
+    "dur": "02:00",
+    "block": "INNOVACIÓN E IA",
+    "cam": "Plano invitado",
+    "text": "P6: “¿Qué cambios está generando la inteligencia artificial en el trabajo tecnológico?”",
+    "graphic": "Gráfica opcional: “Tecnología · Creatividad · Innovación”.",
+    "notes": "No presentar predicciones como hechos."
+   },
+   {
+    "tc": "10:55",
+    "dur": "02:00",
+    "block": "HABILIDADES DEL FUTURO",
+    "cam": "Plano invitado",
+    "text": "P7: “¿Qué habilidades técnicas y humanas recomendaría desarrollar a quienes quieren estudiar informática?”",
+    "graphic": "Plano estable; dejar respuesta completa.",
+    "notes": "Repregunta: “¿Qué pueden empezar a aprender desde hoy?”"
+   },
+   {
+    "tc": "12:55",
+    "dur": "02:00",
+    "block": "PARTICIPACIÓN ESTUDIANTIL",
+    "cam": "CAM 2",
+    "text": "“¿Qué valor tiene para los estudiantes mostrar sus conocimientos en un evento abierto a la comunidad y trabajar junto a otras carreras?”",
+    "graphic": "Plano general; recurso de estudiantes si está disponible.",
+    "notes": "Conectar con el aprendizaje práctico."
+   },
+   {
+    "tc": "14:55",
+    "dur": "02:00",
+    "block": "INVITACIÓN",
+    "cam": "Plano invitado → general",
+    "text": "“¿Qué actividad tecnológica recomendaría visitar especialmente a quienes todavía no se acercan a la robótica o la informática?”",
+    "graphic": "B-ROLL correspondiente si existe.",
+    "notes": "No mencionar horarios específicos sin programa confirmado."
+   },
+   {
+    "tc": "16:55",
+    "dur": "00:45",
+    "block": "CIERRE",
+    "cam": "CAM 2",
+    "text": "“Muchas gracias, Luis. La tecnología también es creatividad, colaboración y resolución de problemas, y hoy podemos verlo en Frikital Fest 2026.”",
+    "graphic": "Motion graphic cierre 10–15 s + cartón fijo.",
+    "notes": "Salida a música."
+   }
+  ]
+ },
+ "5": {
+  "title": "STREAMING 5 · JACKFREDO",
+  "sub": "Ilustración, creatividad y cultura visual | Invitados: Jackfredo, ilustrador invitado | Duración objetivo: 18 min aprox.",
+  "steps": [
+   {
+    "tc": "00:00",
+    "dur": "00:20",
+    "block": "PREVIO",
+    "cam": "CARTÓN FIJO",
+    "text": "Sin diálogo.",
+    "graphic": "Cartón fijo inicio.",
+    "notes": "Confirmar disponibilidad del invitado."
+   },
+   {
+    "tc": "00:20",
+    "dur": "00:15",
+    "block": "APERTURA",
+    "cam": "MOTION GRAPHIC",
+    "text": "Música de identidad.",
+    "graphic": "Motion graphic apertura.",
+    "notes": "Cortar a CAM 2."
+   },
+   {
+    "tc": "00:35",
+    "dur": "01:20",
+    "block": "INTRODUCCIÓN",
+    "cam": "CAM 2",
+    "text": "“En los videojuegos, los cómics, la animación y muchos universos de la cultura geek, la ilustración ayuda a dar forma a personajes, mundos e historias. Hoy conversamos con un artista invitado de Frikital Fest.”",
+    "graphic": "Lower third: “ILUSTRACIÓN Y CULTURA VISUAL”.",
+    "notes": "Si hay obras en el lugar, planificar insertos."
+   },
+   {
+    "tc": "01:55",
+    "dur": "01:00",
+    "block": "PRESENTACIÓN",
+    "cam": "Plano individual de Jackfredo",
+    "text": "“Nos acompaña Jackfredo, ilustrador invitado de esta edición. Gracias por compartir tu trabajo con el público de Frikital Fest.”",
+    "graphic": "Lower third: “Jackfredo · Ilustrador” (confirmar denominación).",
+    "notes": "Confirmar grafía del nombre."
+   },
+   {
+    "tc": "02:55",
+    "dur": "02:00",
+    "block": "INICIO CREATIVO",
+    "cam": "Plano invitado",
+    "text": "P1: “¿Cómo nació tu interés por la ilustración y cuándo sentiste que querías dedicarte a ella?”",
+    "graphic": "Si se muestran obras, pedir permiso y evitar tapar al invitado.",
+    "notes": "Respuesta personal; dejar espacio."
+   },
+   {
+    "tc": "04:55",
+    "dur": "02:00",
+    "block": "REFERENTES Y PROCESO",
+    "cam": "Plano invitado",
+    "text": "P2: “¿Qué artistas, historias o referentes han influido en tu trabajo?” P3: “¿Cómo suele comenzar una ilustración: con una idea, un boceto o una investigación?”",
+    "graphic": "Planos recurso de bocetos u obras si están disponibles.",
+    "notes": "No asumir técnicas específicas."
+   },
+   {
+    "tc": "06:55",
+    "dur": "02:00",
+    "block": "HERRAMIENTAS",
+    "cam": "Plano invitado",
+    "text": "P4: “¿Qué herramientas o técnicas utilizas habitualmente para desarrollar tus trabajos?”",
+    "graphic": "Insertos de herramientas solo si están presentes.",
+    "notes": "La respuesta define el detalle técnico."
+   },
+   {
+    "tc": "08:55",
+    "dur": "02:00",
+    "block": "INDUSTRIA EN CHILE",
+    "cam": "Plano invitado",
+    "text": "P5: “¿Cómo ves el escenario actual para ilustradores y artistas visuales en Chile, especialmente fuera de Santiago?”",
+    "graphic": "CAM 2 para reacción.",
+    "notes": "Pregunta abierta; evitar afirmar cifras de mercado."
+   },
+   {
+    "tc": "10:55",
+    "dur": "02:00",
+    "block": "REDES Y AUDIENCIAS",
+    "cam": "Plano invitado",
+    "text": "P6: “¿Qué papel cumplen las redes sociales para mostrar el trabajo, encontrar público y generar oportunidades?”",
+    "graphic": "Gráfica de redes solo si el invitado entrega sus cuentas y autoriza mostrarlas.",
+    "notes": "No inventar usuario ni enlaces."
+   },
+   {
+    "tc": "12:55",
+    "dur": "02:00",
+    "block": "IA Y CREATIVIDAD",
+    "cam": "Plano invitado",
+    "text": "“¿Cómo ves la aparición de herramientas de inteligencia artificial en el mundo de la ilustración? ¿Qué conversación crees que deberían tener los creadores sobre su uso?”",
+    "graphic": "Plano individual sin interrupciones.",
+    "notes": "Pregunta abierta, sin presuponer opinión."
+   },
+   {
+    "tc": "14:55",
+    "dur": "02:00",
+    "block": "CONSEJO A PRINCIPIANTES",
+    "cam": "Plano invitado",
+    "text": "P7: “¿Qué consejo práctico le darías a alguien que está comenzando a dibujar y quiere mejorar su trabajo?” Seguimiento: “¿Qué ejercicio recomendarías practicar esta semana?”",
+    "graphic": "CAM 2 al cierre de respuesta.",
+    "notes": "Buscar una recomendación accionable."
+   },
+   {
+    "tc": "16:55",
+    "dur": "00:45",
+    "block": "CIERRE",
+    "cam": "CAM 2",
+    "text": "“Muchas gracias, Jackfredo, por compartir tu experiencia y tus ideas con la comunidad. La ilustración nos recuerda que toda gran historia empieza con una mirada y una idea.”",
+    "graphic": "Motion graphic cierre + cartón fijo.",
+    "notes": "Cierre con plano del invitado."
+   }
+  ]
+ },
+ "6": {
+  "title": "STREAMING 6 · RED BULL + MUVIX + BIMEDIA",
+  "sub": "Colaboración, marcas y experiencias del festival | Invitados: Representantes de Red Bull, Muvix y BiMedia | Duración objetivo: 18 min aprox.",
+  "steps": [
+   {
+    "tc": "00:00",
+    "dur": "00:20",
+    "block": "PREVIO",
+    "cam": "CARTÓN FIJO",
+    "text": "Sin diálogo.",
+    "graphic": "Cartón fijo inicio.",
+    "notes": "Confirmar quién participa y orden de entrevistas."
+   },
+   {
+    "tc": "00:20",
+    "dur": "00:15",
+    "block": "APERTURA",
+    "cam": "MOTION GRAPHIC",
+    "text": "Música de identidad.",
+    "graphic": "Motion graphic apertura.",
+    "notes": "Cortar a CAM 2."
+   },
+   {
+    "tc": "00:35",
+    "dur": "01:20",
+    "block": "INTRODUCCIÓN",
+    "cam": "CAM 2",
+    "text": "“Frikital Fest reúne a comunidades, institución educativa, estudiantes y colaboradores para construir una jornada de cultura geek, creatividad y tecnología. Conversaremos con representantes de algunas de las marcas que forman parte de esta edición.”",
+    "graphic": "Lower third: “COLABORADORES FRIKITAL FEST 2026”.",
+    "notes": "Evitar sugerir compromisos comerciales más allá de la participación confirmada."
+   },
+   {
+    "tc": "01:55",
+    "dur": "00:45",
+    "block": "PRESENTACIÓN RED BULL",
+    "cam": "Plano individual del representante",
+    "text": "“Comenzamos con Red Bull. Gracias por acompañarnos en Frikital Fest 2026.”",
+    "graphic": "Lower third con nombre/cargo si se confirma.",
+    "notes": "Mantener logo según manual de marca disponible."
+   },
+   {
+    "tc": "02:40",
+    "dur": "02:00",
+    "block": "ENTREVISTA RED BULL",
+    "cam": "Plano individual",
+    "text": "P1: “¿Qué les motivó a participar en Frikital Fest?” P2: “¿Cómo conecta la marca con las comunidades gamer y geek?”",
+    "graphic": "CAM 2 para reacción; recursos de activación solo si está operativa y autorizada.",
+    "notes": "No prometer premios o activaciones no confirmados."
+   },
+   {
+    "tc": "04:40",
+    "dur": "01:30",
+    "block": "RED BULL · EXPERIENCIA",
+    "cam": "Plano individual + general",
+    "text": "P3: “¿Qué experiencia puede encontrar el público hoy en su espacio?” P4: “¿Qué valor tienen estos encuentros para las comunidades regionales?”",
+    "graphic": "B-ROLL del espacio de marca si está disponible.",
+    "notes": "Confirmar detalles de activación antes de mencionarlos."
+   },
+   {
+    "tc": "06:10",
+    "dur": "00:45",
+    "block": "TRANSICIÓN MUVIX",
+    "cam": "CAM 2",
+    "text": "“La cultura geek también tiene una relación muy estrecha con el cine, las historias y los universos que pasan de la pantalla a las comunidades.”",
+    "graphic": "Lower third Muvix con representante confirmado.",
+    "notes": "Transición breve."
+   },
+   {
+    "tc": "06:55",
+    "dur": "02:00",
+    "block": "ENTREVISTA MUVIX",
+    "cam": "Plano individual",
+    "text": "P1: “¿Cómo dialoga el cine con la cultura geek actual?” P2: “¿Qué papel tienen las comunidades de fanáticos en la experiencia cinematográfica?”",
+    "graphic": "B-ROLL solo si está disponible y autorizado.",
+    "notes": "Evitar anunciar estrenos o promociones sin confirmación."
+   },
+   {
+    "tc": "08:55",
+    "dur": "01:30",
+    "block": "MUVIX · TENDENCIAS",
+    "cam": "Plano individual",
+    "text": "P3: “¿Qué tendencias observan en las audiencias más jóvenes?” P4: “¿Qué proyectos o novedades pueden compartir hoy?”",
+    "graphic": "CAM 2 para reacción.",
+    "notes": "Si no hay novedades confirmadas, pedir una reflexión general."
+   },
+   {
+    "tc": "10:25",
+    "dur": "00:45",
+    "block": "TRANSICIÓN BIMEDIA",
+    "cam": "CAM 2",
+    "text": "“La comunicación también es clave para conectar proyectos, audiencias y comunidades. Ahora conversamos con BiMedia.”",
+    "graphic": "Lower third BiMedia con representante confirmado.",
+    "notes": "Transición breve."
+   },
+   {
+    "tc": "11:10",
+    "dur": "02:00",
+    "block": "ENTREVISTA BIMEDIA",
+    "cam": "Plano individual",
+    "text": "P1: “¿Por qué es importante apoyar eventos que se desarrollan en regiones?” P2: “¿Qué aporta la comunicación estratégica al crecimiento de iniciativas como Frikital Fest?”",
+    "graphic": "Plano individual; CAM 2 para reacción.",
+    "notes": "No atribuir resultados cuantitativos no entregados."
+   },
+   {
+    "tc": "13:10",
+    "dur": "02:00",
+    "block": "BIMEDIA · INDUSTRIAS CREATIVAS",
+    "cam": "Plano individual + general",
+    "text": "P3: “¿Qué potencial observa en las industrias creativas del Maule?” P4: “¿Qué elementos ayudan a proyectar este tipo de encuentros hacia futuras ediciones?”",
+    "graphic": "CAM 2 si se responde en conjunto.",
+    "notes": "Formular como reflexión, no como anuncio."
+   },
+   {
+    "tc": "15:10",
+    "dur": "01:30",
+    "block": "CIERRE COMPARTIDO",
+    "cam": "CAM 2",
+    "text": "“Gracias a Red Bull, Muvix y BiMedia por ser parte de esta jornada. Frikital Fest se construye con la colaboración de muchas personas y organizaciones que hacen posible el encuentro entre creatividad, tecnología y comunidad.”",
+    "graphic": "Plano general si los tres representantes están presentes; si no, conductor/a a cámara.",
+    "notes": "No forzar una toma grupal si los invitados ya se retiraron."
+   },
+   {
+    "tc": "16:40",
+    "dur": "00:45",
+    "block": "SALIDA",
+    "cam": "CAM 2",
+    "text": "“Seguimos disfrutando de Frikital Fest 2026 desde Santo Tomás Talca. Nos reencontramos en el próximo bloque.”",
+    "graphic": "Motion graphic cierre + cartón fijo.",
+    "notes": "Salida musical."
+   }
+  ]
+ },
+ "7": {
+  "title": "STREAMING 7 · CEREMONIA DE PREMIACIÓN",
+  "sub": "Reconocimientos, agradecimientos y cierre de jornada | Invitados: Conductor/a + Jorge Córdova Pacheco (mensaje de organización) + ganadores | Duración objetivo: 18 min aprox.",
+  "steps": [
+   {
+    "tc": "00:00",
+    "dur": "00:20",
+    "block": "PREVIO",
+    "cam": "CARTÓN FIJO",
+    "text": "Sin diálogo.",
+    "graphic": "Cartón fijo inicio.",
+    "notes": "Producción debe recibir lista oficial de ganadores y orden de entrega."
+   },
+   {
+    "tc": "00:20",
+    "dur": "00:15",
+    "block": "APERTURA",
+    "cam": "MOTION GRAPHIC",
+    "text": "Música de identidad.",
+    "graphic": "Motion graphic apertura.",
+    "notes": "Cortar a CAM 2."
+   },
+   {
+    "tc": "00:35",
+    "dur": "01:30",
+    "block": "INTRODUCCIÓN",
+    "cam": "CAM 2 · PLANO GENERAL",
+    "text": "“Llegamos a uno de los momentos más esperados de Frikital Fest 2026: reconocer el talento, la creatividad y la participación que han marcado esta jornada.”",
+    "graphic": "Lower third: “CEREMONIA DE PREMIACIÓN”.",
+    "notes": "Confirmar qué categorías serán premiadas."
+   },
+   {
+    "tc": "02:05",
+    "dur": "01:00",
+    "block": "BALANCE DE JORNADA",
+    "cam": "CAM 2",
+    "text": "“Esta segunda edición reúne videojuegos, cosplay, ilustración, comunidades, juegos de mesa y experiencias de robótica, en una jornada organizada por las áreas de Comunicación y Diseño e Informática de Santo Tomás Talca.”",
+    "graphic": "B-ROLL de la jornada si está disponible.",
+    "notes": "No declarar asistencia final de 1.500 sin dato oficial."
+   },
+   {
+    "tc": "03:05",
+    "dur": "02:30",
+    "block": "PREMIACIÓN COSPLAY",
+    "cam": "CAM 2 para anuncio; plano de premiado/a; recurso de entrega",
+    "text": "CONDUCTOR/A: “Comenzamos con el reconocimiento a la creatividad y el trabajo de quienes participaron en cosplay.” Luego leer categoría, puesto y nombre según lista oficial.",
+    "graphic": "Gráfica de categoría y nombre de ganador/a; foto grupal si corresponde.",
+    "notes": "No improvisar nombres. Confirmar pronunciación y orden antes de salir."
+   },
+   {
+    "tc": "05:35",
+    "dur": "02:30",
+    "block": "PREMIACIÓN VIDEOJUEGOS",
+    "cam": "CAM 2 + plano de entrega",
+    "text": "“Continuamos con quienes destacaron en las competencias de videojuegos.” Leer el nombre exacto del torneo y ganadores desde el acta oficial.",
+    "graphic": "Gráfica por categoría; captar entrega y reacción.",
+    "notes": "Confirmar si se premiará Super Smash Bros., League of Legends u otra categoría."
+   },
+   {
+    "tc": "08:05",
+    "dur": "02:30",
+    "block": "PREMIACIÓN ROBÓTICA",
+    "cam": "CAM 2 + plano de entrega",
+    "text": "“También reconocemos el talento técnico, la estrategia y la innovación presentes en las actividades de robótica.” Leer categoría y ganadores según registro oficial.",
+    "graphic": "Gráfica por categoría y ganadores.",
+    "notes": "Usar solo categorías confirmadas por organización."
+   },
+   {
+    "tc": "10:35",
+    "dur": "02:00",
+    "block": "OTROS RECONOCIMIENTOS",
+    "cam": "CAM 2",
+    "text": "Si corresponde: “Reconocemos también a quienes participaron en [categoría confirmada]”. Leer nombres y distinciones según pauta oficial.",
+    "graphic": "Gráfica solo si existen otras categorías.",
+    "notes": "Bloque opcional: eliminar si no hay otras premiaciones."
+   },
+   {
+    "tc": "12:35",
+    "dur": "02:30",
+    "block": "MENSAJE ORGANIZACIÓN",
+    "cam": "Plano individual de Jorge Córdova Pacheco o CAM 2",
+    "text": "Presentación: “Nos acompaña Jorge Córdova Pacheco, director de carrera de Diseño Gráfico y productor general del encuentro, para compartir un balance y agradecer a quienes hicieron posible esta edición.” Preguntas guía: “¿Qué balance hace de la jornada?”, “¿Qué valor tuvo la participación estudiantil?”, “¿Qué agradecimientos quisiera compartir?”",
+    "graphic": "Lower third con nombre y cargo confirmado.",
+    "notes": "Dejar que el invitado entregue su mensaje; no atribuir anuncios futuros."
+   },
+   {
+    "tc": "15:05",
+    "dur": "01:30",
+    "block": "AGRADECIMIENTOS",
+    "cam": "CAM 2",
+    "text": "“Gracias a las comunidades, expositores, colaboradores, estudiantes, docentes y visitantes que fueron parte de esta edición. Frikital Fest es una experiencia colectiva que conecta aprendizaje, creatividad y comunidad.”",
+    "graphic": "B-ROLL de público y equipos si está disponible.",
+    "notes": "Cuidar que la música no tape el discurso."
+   },
+   {
+    "tc": "16:35",
+    "dur": "01:00",
+    "block": "CIERRE FINAL",
+    "cam": "CAM 2",
+    "text": "“Frikital Fest 2026 llega a su cierre, pero la aventura geek continúa. Gracias por acompañarnos desde Santo Tomás Talca. ¡Nos vemos en una próxima edición!”",
+    "graphic": "MOTION GRAPHIC FINAL 15–20 s; cartón final con logo, organizadores y auspiciadores.",
+    "notes": "Verificar logos y orden de aparición antes del evento."
+   },
+   {
+    "tc": "17:35",
+    "dur": "00:25",
+    "block": "POST-CIERRE",
+    "cam": "B-ROLL / TOMA GENERAL",
+    "text": "Música de salida. Sin diálogo o despedida breve si el tiempo lo permite.",
+    "graphic": "Imágenes de apoyo del evento y toma general del público.",
+    "notes": "Mantener señal unos segundos y luego cortar."
+   }
+  ]
+ }
+}

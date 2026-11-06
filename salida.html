@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Frikital CG · Salida</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="css/salida.css?v=1.0.1">
+</head><body>
+<div id="stage"></div><div id="debug"></div>
+<script src="js/firebase-config.js?v=1.0.1"></script>
+<script src="js/core.js?v=1.0.1"></script>
+<script src="js/render.js?v=1.0.1"></script>
+<script>
+(function(){
+  var q=CG.util.qs, sala=q('sala')||CG.cfg.sala||'frikital', local=q('local')==='1';
+  var store=CG.createStore({sala:sala,mode:local?'local':'online',dbUrl:q('db')||CG.cfg.databaseURL||''});
+  var stage=document.getElementById('stage');
+  if(q('debug')==='1') document.body.classList.add('debug');
+  if(q('fit')==='1'){ var f=function(){var s=Math.min(innerWidth/1920,innerHeight/1080);stage.style.transform='scale('+s+')'};f();addEventListener('resize',f); }
+  var r=new CG.Renderer(stage,store,{side:'salida'});
+  window.CG_store=store; window.CG_renderer=r;
+  store.onStatus(function(s){var d=document.getElementById('debug');d.textContent='sala '+sala+' · '+store.mode+' · '+s;});
+  store.start();
+})();
+</script></body></html>
