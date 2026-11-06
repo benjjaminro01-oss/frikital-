@@ -1,3 +1,4 @@
+
 /* Frikital CG · adaptador del panel · v1.0.0 */
 (function(w){
 'use strict';
