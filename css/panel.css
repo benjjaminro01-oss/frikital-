@@ -1,0 +1,135 @@
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #100d20;
+  color: #f5f2ff;
+  font-family: Arial, sans-serif;
+}
+
+header {
+  min-height: 64px;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  background: #1b1630;
+  border-bottom: 1px solid #39304f;
+}
+
+.logo {
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+
+.logo span {
+  color: #ed45c5;
+}
+
+nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 10px 14px;
+  border: 1px solid #51456d;
+  border-radius: 7px;
+  background: #302747;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background: #493660;
+}
+
+button.rojo {
+  background: #a9274b;
+  border-color: #d64c70;
+}
+
+.modo {
+  color: #64e5ae;
+  margin-left: auto;
+}
+
+#main {
+  padding: 20px;
+}
+
+#main h2 {
+  margin-top: 0;
+}
+
+#main button.activo {
+  background: #a52b91;
+}
+
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.tarjeta {
+  padding: 16px;
+  border: 1px solid #493b60;
+  border-radius: 10px;
+  background: #201a32;
+}
+
+.tarjeta h3 {
+  margin: 0 0 12px;
+}
+
+.tarjeta p {
+  color: #c8bdd9;
+}
+
+.tarjeta button {
+  margin: 4px 4px 4px 0;
+}
+
+#stm, #mons {
+  padding: 0 20px;
+}
+
+#toast {
+  position: fixed;
+  bottom: 18px;
+  right: 18px;
+  padding: 12px 18px;
+  background: #302747;
+  border-radius: 8px;
+  display: none;
+}
+
+dialog {
+  background: #201a32;
+  color: white;
+  border: 1px solid #62517e;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+@media (max-width: 700px) {
+  header {
+    gap: 10px;
+  }
+
+  .modo {
+    margin-left: 0;
+  }
+
+  #main {
+    padding: 12px;
+  }
+}
