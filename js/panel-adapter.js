@@ -1,5 +1,5 @@
 
-/* Frikital CG · adaptador del panel · v1.0.0 */
+/* Frikital CG · adaptador del panel · v1.1.0 */
 (function(w){
 'use strict';
 
@@ -96,6 +96,133 @@ function actualizar(id, campos){
   return store.set('live/'+id+'/fields',fields);
 }
 
+/* -----------------------------------------
+   TARJETAS DE GC POR SECCIÓN
+----------------------------------------- */
+
+/* Identificador seguro para Firebase */
+function nuevoId(){
+  return 'gc_' + Date.now() + '_' +
+    Math.random().toString(36).slice(2,8);
+}
+
+/* Normalizar número de sección */
+function claveSeccion(numero){
+  return String(numero).replace(/[^a-zA-Z0-9_-]/g,'');
+}
+
+/* Obtener tarjetas guardadas de una sección */
+function obtenerTarjetas(seccion){
+  var cfg = store.config();
+  var grupos = cfg.sectionGCs || {};
+  var tarjetas = grupos[claveSeccion(seccion)] || {};
+
+  return Object.keys(tarjetas)
+    .map(function(id){
+      return tarjetas[id];
+    })
+    .sort(function(a,b){
+      return (a.createdAt || 0) - (b.createdAt || 0);
+    });
+}
+
+/* Crear una tarjeta nueva y vacía */
+function crearTarjeta(seccion){
+  var cfg = store.config();
+  var base = cfg.graphics.lt_invitado || {};
+  var fields = Object.assign({},base.fields || {});
+
+  fields.nombre = '';
+  fields.cargo = '';
+
+  var tarjeta = {
+    id: nuevoId(),
+    titulo: 'Nuevo invitado',
+    fields: fields,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+
+  return guardarTarjeta(seccion,tarjeta);
+}
+
+/* Guardar una tarjeta nueva o existente */
+function guardarTarjeta(seccion, tarjeta){
+  if(!tarjeta){
+    return Promise.reject(new Error('Faltan los datos de la tarjeta'));
+  }
+
+  var sec = claveSeccion(seccion);
+
+  if(!sec){
+    return Promise.reject(new Error('Sección no válida'));
+  }
+
+  var id = tarjeta.id || nuevoId();
+
+  var guardada = {
+    id: id,
+    titulo: tarjeta.titulo || 'Invitado',
+    fields: Object.assign({},tarjeta.fields || {}),
+    createdAt: tarjeta.createdAt || Date.now(),
+    updatedAt: Date.now()
+  };
+
+  return store.set(
+    'config/sectionGCs/'+sec+'/'+id,
+    guardada
+  ).then(function(){
+    return guardada;
+  });
+}
+
+/* Duplicar una tarjeta existente */
+function duplicarTarjeta(seccion,id){
+  var tarjetas = obtenerTarjetas(seccion);
+
+  var original = tarjetas.find(function(t){
+    return t.id === id;
+  });
+
+  if(!original){
+    return Promise.reject(new Error('No se encontró la tarjeta'));
+  }
+
+  var copia = {
+    id: nuevoId(),
+    titulo: (original.titulo || 'Invitado') + ' (copia)',
+    fields: Object.assign({},original.fields || {}),
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  };
+
+  return guardarTarjeta(seccion,copia);
+}
+
+/* Recuperar una tarjeta específica */
+function obtenerTarjeta(seccion,id){
+  return obtenerTarjetas(seccion).find(function(t){
+    return t.id === id;
+  }) || null;
+}
+
+/* Mostrar una tarjeta en el GC de invitados de OBS */
+function mostrarTarjeta(seccion,id){
+  var tarjeta = obtenerTarjeta(seccion,id);
+
+  if(!tarjeta){
+    return Promise.reject(new Error('No se encontró la tarjeta'));
+  }
+
+  return mostrar('lt_invitado',{
+    fields: Object.assign({},tarjeta.fields || {})
+  });
+}
+
+/* -----------------------------------------
+   ESTADO GENERAL
+----------------------------------------- */
+
 /* Obtener configuración y estado actual */
 function obtener(){
   return {
@@ -116,13 +243,23 @@ function suscribir(callback){
 w.FRK = {
   sala: sala,
   store: store,
+
   mostrar: mostrar,
   ocultar: ocultar,
   limpiar: limpiar,
   editar: editar,
   actualizar: actualizar,
+
   obtener: obtener,
   suscribir: suscribir,
+
+  obtenerTarjetas: obtenerTarjetas,
+  obtenerTarjeta: obtenerTarjeta,
+  crearTarjeta: crearTarjeta,
+  guardarTarjeta: guardarTarjeta,
+  duplicarTarjeta: duplicarTarjeta,
+  mostrarTarjeta: mostrarTarjeta,
+
   iniciar: function(){
     if(iniciado) return Promise.resolve();
     iniciado = true;
