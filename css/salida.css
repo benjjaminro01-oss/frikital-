@@ -1,6 +1,32 @@
-/* Frikital CG · salida para OBS · v1.1.0 */
-html,body{margin:0;padding:0;background:transparent;overflow:hidden;width:100%;height:100%}
-body{font-family:var(--font)}
-#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;background:transparent}
-#debug{position:absolute;right:8px;top:8px;z-index:999;font:12px/1.3 monospace;color:#0f0;background:#000a;padding:4px 8px;border-radius:4px;display:none}
-body.debug #debug{display:block}
+/* Bajo Presión CG · salida (v1) */
+html, body { margin: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; }
+.capa { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; }
+#capa-logo { z-index: 10; } #capa-gc { z-index: 20; } #capa-video { z-index: 30; } #capa-trans { z-index: 40; }
+.logo-img { position: absolute; height: auto; filter: drop-shadow(0 6px 14px rgba(0,0,0,.35)); }
+.video-el { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: fill; }
+svg text, .gc-txt { font-family: "Avenir Next", "Avenir Next Heavy", "Helvetica Neue", "Arial Black", Impact, sans-serif; font-weight: 900; font-style: italic; }
+/* fondos de prueba (solo con ?fondo=...; la salida real es transparente) */
+body.fondo-cuadros { background: repeating-conic-gradient(#3a3f4c 0% 25%, #2a2e38 0% 50%) 0 0 / 40px 40px; }
+body.fondo-oscuro { background: #101820; }
+body.fondo-verde { background: #1c7a2f; }
+
+/* huincha "PREGUNTA Y RESPONDE" (capa propia; queda debajo de los GC si coinciden). Zonas seguras: texto dentro de x 196-1730 / y 860-975 */
+#capa-huincha { z-index: 15; }
+.hu { position: absolute; left: 120px; right: 120px; bottom: 90px; height: 150px; font-family: "Avenir Next", "Helvetica Neue", Arial, sans-serif; }
+.hu-in { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.hu-shape { position: absolute; left: 0; top: 0; right: 0; bottom: 0; transform-origin: 0 50%; filter: drop-shadow(0 8px 18px rgba(0,0,0,.4)); }
+.hu-bg, .hu-bgi { position: absolute; clip-path: polygon(36px 0, 100% 0, calc(100% - 36px) 100%, 0 100%); }
+.hu-bg { left: 0; top: 0; right: 0; bottom: 0; background: #288CFF; }
+.hu-bgi { left: 5px; top: 3px; right: 5px; bottom: 3px; background: linear-gradient(100deg, #0A143E 0%, #06112B 100%); }
+.hu-cap { position: absolute; top: 0; bottom: 0; right: 0; width: 60px; background: #FF8C1E; clip-path: polygon(36px 0, 60px 0, 24px 100%, 0 100%); }
+.hu-tab { position: absolute; left: 36px; bottom: 100%; height: 52px; padding: 0 36px 0 30px; display: flex; align-items: center; background: #288CFF; clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+.hu-tab span { color: #fff; font-weight: 900; font-style: italic; font-size: 30px; letter-spacing: .14em; white-space: nowrap; }
+.hu-tab span::before { content: ""; display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #FF8C1E; margin-right: 16px; vertical-align: 2px; }
+.hu-win { position: absolute; left: 76px; right: 70px; top: 10px; bottom: 10px; display: flex; align-items: center; overflow: hidden; }
+.hu-txt { width: 100%; color: #fff; font-weight: 800; font-size: 60px; line-height: 1.12; overflow-wrap: anywhere; text-shadow: 0 3px 0 rgba(0,0,0,.35); }
+.hu-win.scroll { -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 40px, #000 calc(100% - 40px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 40px, #000 calc(100% - 40px), transparent 100%); }
+.hu-win.scroll .hu-txt { width: auto; display: inline-block; white-space: nowrap; overflow-wrap: normal; will-change: transform; }
+.hu-gauge { position: absolute; left: 0; right: 36px; top: 100%; margin-top: 10px; height: 8px;
+  background: linear-gradient(90deg, #288CFF 0 62%, #FF8C1E 62% 86%, #DD1C16 86% 100%);
+  -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 16px, transparent 16px 26px); mask-image: repeating-linear-gradient(90deg, #000 0 16px, transparent 16px 26px); }

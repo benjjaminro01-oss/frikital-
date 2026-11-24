@@ -1,449 +1,532 @@
-/* Frikital CG · panel de control · v1.1.0 */
-(function(w){
-'use strict';
-var CG=w.CG,U=CG.util;
-function $(s,r){return (r||document).querySelector(s)}
-function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
-function h(tag,p){var e=document.createElement(tag);p=p||{};
-  Object.keys(p).forEach(function(k){var v=p[k];if(v==null||v===false)return;
-    if(k==='class')e.className=v;else if(k==='text')e.textContent=v;else if(k==='html')e.innerHTML=v;
-    else if(k.slice(0,2)==='on')e.addEventListener(k.slice(2),v);else if(v===true)e.setAttribute(k,'');else e.setAttribute(k,v)});
-  for(var i=2;i<arguments.length;i++)add(e,arguments[i]);return e}
-function add(e,c){if(c==null||c===false)return;if(Array.isArray(c))c.forEach(function(x){add(e,x)});else e.appendChild(typeof c==='string'||typeof c==='number'?document.createTextNode(c):c)}
-function toast(msg){var t=h('div',{class:'toast',text:msg});document.body.appendChild(t);setTimeout(function(){t.remove()},3200)}
+/* Bajo Presión CG · panel (v3)
+   Vistas: Control (escaleta + editor), Control + Visual (previa y al aire) y Botonera (táctil, con teclas).
+   Todo el estado vive en el Store (Firebase o local): varios equipos controlan la misma sala. */
+(function () {
+  "use strict";
+  var BP = window.BP, P = BP.params(), store = BP.createStore(P), DEF = BP.DEFAULT_CONFIG, ESC = BP.ESCALETA;
+  var $ = function (id) { return document.getElementById(id); };
+  var tree = {}, sel = null, vista = "control", editMode = false, capturando = null, drag = null, escBuilt = false, edKey = "", estadoCon = { ok: false, texto: "conectando…" }, seedOk = false, raf = 0;
 
-/* ---------- conexión (se guarda en este equipo) ---------- */
-var saved={};try{saved=JSON.parse(localStorage.getItem('cg:conn')||'{}')}catch(e){}
-var cfgDb=/^https:/.test(CG.cfg.databaseURL||'')?CG.cfg.databaseURL:'';
-var conn={sala:U.qs('sala')||saved.sala||CG.cfg.sala||'frikital',db:U.qs('db')||saved.db||cfgDb};
-conn.mode=U.qs('local')==='1'?'local':(saved.mode||(conn.db?'online':'local'));
-var store=CG.createStore({sala:conn.sala,mode:conn.mode,dbUrl:conn.db});
-var ui={view:'control',stream:1,step:0,all:false,edit:false};
-try{Object.assign(ui,JSON.parse(localStorage.getItem('cg:ui')||'{}'))}catch(e){}
-ui.all=false;ui.edit=false;
-function saveUi(){try{localStorage.setItem('cg:ui',JSON.stringify({view:ui.view,stream:ui.stream}))}catch(e){}}
-var libretos=null,statusTxt='';
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function cfg() { return tree.config || DEF; }
+  function G(id) { return (cfg().graficas || {})[id] || DEF.graficas[id]; }
+  function medios() { return cfg().medios || DEF.medios; }
+  function st(canal, capa) { return BP.getPath(tree, "state/" + canal + "/" + capa); }
 
-/* ---------- acceso a datos ---------- */
-function cfg(){return store.config()}
-function G(id){return cfg().graphics[id]}
-function isOn(id){var l=store.live()[id];return !!(l&&l.on)}
-function keyOf(id){var b=cfg().buttons.filter(function(x){return x.gid===id})[0];return b&&b.key||''}
-function pend(g){return g.type!=='video'&&U.hasPending(g.fields)}
-function nofile(g){return g.type==='video'&&!(g.video&&g.video.src)}
-function whyNot(g){if(pend(g))return 'Tiene campos PENDIENTE_ por completar.';if(nofile(g))return 'Falta el archivo de video.';if(g.needsOk&&!g.ok)return 'Valida nombre y cargo antes de mostrar.';return ''}
-function snap(g){return {fields:U.clone(g.fields||{}),colors:U.clone(g.colors||{})}}
-function cset(id,sub,val){store.set('config/graphics/'+id+'/'+sub,val)}
+  // ---------- campos editables por tipo de gráfica
+  var CAMPOS = {
+    gc_persona: [
+      { k: "nombre", t: "texto", l: "Nombre" }, { k: "etiqueta", t: "texto", l: "Etiqueta (pestaña)" },
+      { k: "tab", t: "color", l: "Color de la pestaña" }, { k: "tabText", t: "color", l: "Color del texto de la pestaña" }, { k: "cap", t: "color", l: "Color del remate" }
+    ],
+    video: [{ k: "medio", t: "medio", l: "Video" }, { k: "repetir", t: "check", l: "Repetir en bucle" }],
+    imagen: [{ k: "medio", t: "medio", l: "Imagen" }],
+    logo: [
+      { k: "posicion", t: "sel", l: "Posición", op: { tr: "Arriba derecha", tl: "Arriba izquierda", br: "Abajo derecha", bl: "Abajo izquierda" } },
+      { k: "ancho", t: "num", l: "Ancho (px)", min: 80, max: 500 }
+    ]
+  };
+  var RAPIDOS = { gc_persona: ["nombre", "tab"], video: ["medio"], imagen: ["medio"], logo: ["posicion"] };
+  function campoDef(tipo, k) { var a = CAMPOS[tipo] || [], i; for (i = 0; i < a.length; i++) { if (a[i].k === k) { return a[i]; } } return { k: k, t: "texto", l: k }; }
 
-/* ---------- acciones en vivo ---------- */
-function show(id){var g=G(id);if(!g)return false;var why=whyNot(g);if(why){toast(g.name+': '+why);return false}
-  var live=store.live(),map={},prev=live[id]||{};
-  Object.keys(live).forEach(function(o){var go=G(o);if(o!==id&&live[o]&&live[o].on&&go&&(go.group||o)===(g.group||id))map['live/'+o+'/on']=false});
-  map['live/'+id]=Object.assign({on:true,t:Date.now(),n:(prev.n||0)+1},snap(g));
-  store.multi(map);return true}
-function hide(id){store.set('live/'+id+'/on',false)}
-function toggle(id){isOn(id)?hide(id):show(id)}
-function update(id){var g=G(id);if(!g)return;if(!isOn(id)){toast('La gráfica no está al aire.');return}
-  var why=whyNot(g);if(why){toast(why);return}
-  var s=snap(g),m={};m['live/'+id+'/fields']=s.fields;m['live/'+id+'/colors']=Object.keys(s.colors).length?s.colors:null;
-  if(g.type==='video')m['live/'+id+'/n']=((store.live()[id]||{}).n||0)+1;store.multi(m)}
-function clearAll(){var live=store.live(),m={};Object.keys(live).forEach(function(id){if(live[id]&&live[id].on)m['live/'+id+'/on']=false});
-  if(Object.keys(m).length)store.multi(m);preview(null)}
-
-/* ---------- monitores (vista previa y al aire) ---------- */
-var mons=null;
-function ensureMons(){
-  if(mons)return mons;
-  var host=$('#monHost'),prevStore=CG.createMemStore(store);
-  function mk(cls,st){var wrap=h('div',{class:'mon '+cls}),stage=h('div',{class:'mon-stage'});wrap.appendChild(stage);host.appendChild(wrap);
-    var r=new CG.Renderer(stage,st,{side:'mon',mute:true});
-    function fit(){var s=wrap.clientWidth/1920;if(s>0)stage.style.transform='scale('+s+')'}
-    if(w.ResizeObserver)new ResizeObserver(fit).observe(wrap);fit();
-    return {wrap:wrap,stage:stage,r:r,fit:fit}}
-  mons={prevStore:prevStore,prev:mk('',prevStore),air:mk('air',store),prevId:null};
-  mons.prev.r.sync();mons.air.r.sync();return mons}
-function attachMon(m,where){where.appendChild(m.wrap);m.fit();m.r.items.forEach(function(it){it.refit&&it.refit()})}
-function preview(id){var m=ensureMons();
-  if(!id||m.prevId===id){m.prevId=null;m.prevStore.setLive({});return}
-  var g=G(id);if(!g)return;
-  if(g.type==='video'&&nofile(g)){toast('Falta el archivo de video.');return}
-  m.prevId=id;var o={};o[id]=Object.assign({on:true,t:Date.now(),n:Date.now()},snap(g));m.prevStore.setLive(o)}
-
-/* ---------- escaleta: gráficas asociadas a cada paso ---------- */
-function stepGids(sn,st){
-  var b=(st.block||'').toUpperCase(),g=st.graphic||'',out=[],C=cfg().graphics;
-  function add(id){if(C[id]&&out.indexOf(id)<0)out.push(id)}
-  if(/PREVIO|ESPERA/.test(b))add('carton_inicio');
-  else if(b==='APERTURA')add('motion_apertura');
-  if(/motion graphic final/i.test(g)){add('motion_final');add('carton_final')}
-  else if(/motion graphic cierre/i.test(g)){add('motion_cierre');if(/cartón fijo/i.test(g))add('carton_inicio')}
-  var q=g.match(/Lower third:\s*[“"]([^”"]+)[”"]/),matched=false;
-  if(q){var t=q[1].trim().toUpperCase();Object.keys(C).forEach(function(id){var x=C[id];if(x.type==='gc_apoyo'&&x.fields&&x.fields.texto){var xt=x.fields.texto.toUpperCase();if(xt===t||xt.indexOf(t)===0){add(id);matched=true}}})}
-  if(/Organizan/.test(g))add('placa_organizacion');
-  if(/2\.ª edición/i.test(g))add('placa_datos');
-  if(/Aprendizaje práctico/i.test(g))add('placa_aprendizaje');
-  if(!matched||!q){
-    if(sn===2&&/JEDI/.test(b)&&/PRESENTACI/.test(b))add('lt_jedi');
-    if(sn===2&&/LUDOPALOOZA/.test(b)&&/TRANSICI/.test(b))add('lt_ludopalooza');
-    if(/PRESENTACI[ÓO]N( INVITADO)?$/.test(b)){if(sn===3)add('lt_dario');if(sn===4)add('lt_luis');if(sn===5)add('lt_jackfredo')}
-    if(sn===6&&/PRESENTACI.N RED BULL/.test(b))add('lt_redbull');
-    if(sn===6&&/TRANSICI.N MUVIX/.test(b))add('lt_muvix');
-    if(sn===6&&/TRANSICI.N BIMEDIA/.test(b))add('lt_bimedia');
-    if(sn===7&&/PREMIACI/.test(b))add('gc_premiacion');
-    if(sn===7&&/MENSAJE/.test(b))add('lt_jorge');
-    if(sn===1&&/Jackfredo/.test(g))add('lt_jackfredo');
+  // ---------- pendientes (PENDIENTE_...)
+  function pendCampos(g) {
+    var out = [];
+    Object.keys((g && g.datos) || {}).forEach(function (k) { var v = g.datos[k]; if (typeof v === "string" && /PENDIENTE_/i.test(v)) { out.push({ k: k, v: v }); } });
+    return out;
   }
-  return out}
-var STN=['Apertura','Jedi + Ludopalooza','Darío Cuesta','Luis Galáz','Jackfredo','Marcas','Premiación'];
-function streamGids(sn){var s=libretos&&libretos[sn];if(!s)return [];var out=[];
-  s.steps.forEach(function(st){stepGids(sn,st).forEach(function(id){if(out.indexOf(id)<0)out.push(id)})});return out}
+  function todosPendientes() {
+    var out = [];
+    Object.keys(cfg().graficas || {}).forEach(function (id) { var g = G(id); pendCampos(g).forEach(function (p) { out.push({ gid: id, g: g, k: p.k, v: p.v }); }); });
+    return out;
+  }
 
-/* ---------- editor de gráfica (tarjeta y botonera) ---------- */
-var DEF={gc_apoyo:[['c1','Fondo 1','#4c3371'],['c2','Fondo 2 (centro)','#674c8f'],['borde','Borde','#ffffff'],['sombra','Sombra','#db1582'],['texto','Texto','#ffffff']],
- gc_nombre:[['barra1','Barra 1','#684d90'],['barra2','Barra 2','#452d69'],['acento','Barra de cargo','#2695d3'],['texto','Nombre','#ffffff'],['texto2','Cargo','#ffffff']]};
-function fieldInput(g,key,label){
-  var v=(g.fields&&g.fields[key])||'';
-  var i=h('input',{type:'text',value:v,autocomplete:'off',spellcheck:'false','data-g':g.id,'data-k':key});
-  function mark(){i.classList.toggle('pend',/PENDIENTE_/.test(i.value))}mark();
-  i.addEventListener('input',function(){mark();cset(g.id,'fields/'+key,i.value);refreshCardState(g.id)});
-  return h('div',null,h('span',{class:'fl',text:label}),i)}
-function colorEditor(g){var defs=DEF[g.type];if(!defs)return null;
-  var box=h('div',{class:'colors'});
-  defs.forEach(function(d){var cur=(g.colors&&g.colors[d[0]])||d[2];
-    var inp=h('input',{type:'color',value:cur});
-    inp.addEventListener('input',function(){cset(g.id,'colors/'+d[0],inp.value)});
-    box.appendChild(h('label',null,inp,d[1],h('button',{class:'btn small',title:'Restablecer',text:'↺',onclick:function(){cset(g.id,'colors/'+d[0],null);inp.value=d[2]}})))});
-  return h('details',{class:'cols2'},h('summary',{text:'Colores'}),box)}
-function libOptions(sel,cur){var L=cfg().library||{},found=false;
-  Object.keys(L).forEach(function(k){var o=h('option',{value:L[k].src,text:L[k].name});if(L[k].src===cur){o.selected=true;found=true}sel.appendChild(o)});
-  var e=h('option',{value:'',text:'— sin archivo (pendiente) —'});if(!cur)e.selected=true;sel.insertBefore(e,sel.firstChild);
-  if(cur&&!found){var o=h('option',{value:cur,text:cur,selected:true});sel.appendChild(o)}}
-function videoEditor(g){var v=g.video||{},box=h('div');
-  var sel=h('select');libOptions(sel,v.src);sel.addEventListener('change',function(){cset(g.id,'video/src',sel.value);refreshCardState(g.id)});
-  var up=h('button',{class:'btn small',text:'Subir archivo…',onclick:function(){pickFile('video/mp4,video/webm,video/quicktime',function(f){uploadMedia(f,function(src){cset(g.id,'video/src',src);rerender()})})}});
-  box.appendChild(h('span',{class:'fl',text:'Archivo (biblioteca)'}));box.appendChild(h('div',{class:'row'},sel,up));
-  var bg=h('select');[['opaque','Opaco (sin transparencia)'],['alpha','Transparente / imagen'],['chroma','Fondo verde (chroma)']].forEach(function(o){bg.appendChild(h('option',{value:o[0],text:o[1],selected:(v.bg||'opaque')===o[0]}))});
-  bg.addEventListener('change',function(){cset(g.id,'video/bg',bg.value);rerender()});
-  var en=h('select');[['hide','Ocultar solo'],['hold','Quedarse al final']].forEach(function(o){en.appendChild(h('option',{value:o[0],text:o[1],selected:(v.onEnd||'hold')===o[0]}))});
-  en.addEventListener('change',function(){cset(g.id,'video/onEnd',en.value)});
-  box.appendChild(h('div',{class:'row'},h('div',null,h('span',{class:'fl',text:'Fondo'}),bg),h('div',null,h('span',{class:'fl',text:'Al terminar'}),en)));
-  function chk(label,key){var c=h('input',{type:'checkbox'});c.checked=!!v[key];c.addEventListener('change',function(){cset(g.id,'video/'+key,c.checked)});return h('label',{class:'check'},c,label)}
-  box.appendChild(h('div',{class:'row'},chk('Repetir en bucle','loop'),chk('Con sonido','audio')));
-  if(v.bg==='chroma'){var kc=h('input',{type:'color',value:v.key||'#00ff00'});kc.addEventListener('input',function(){cset(g.id,'video/key',kc.value)});
-    var sim=h('input',{type:'range',min:0,max:.8,step:.01,value:v.sim==null?.32:v.sim});sim.addEventListener('input',function(){cset(g.id,'video/sim',+sim.value)});
-    var sm=h('input',{type:'range',min:0,max:.4,step:.01,value:v.smooth==null?.12:v.smooth});sm.addEventListener('input',function(){cset(g.id,'video/smooth',+sm.value)});
-    box.appendChild(h('div',{class:'row'},h('div',null,h('span',{class:'fl',text:'Color a quitar'}),kc),h('div',null,h('span',{class:'fl',text:'Tolerancia'}),sim),h('div',null,h('span',{class:'fl',text:'Suavizado'}),sm)))}
-  return box}
-function editorBody(g){var b=h('div');
-  if(g.type==='gc_apoyo')b.appendChild(fieldInput(g,'texto','Texto'));
-  else if(g.type==='gc_nombre')b.appendChild(h('div',{class:'row'},fieldInput(g,'nombre','Nombre'),fieldInput(g,'cargo','Cargo')));
-  else if(g.type==='video')b.appendChild(videoEditor(g));
-  if(g.needsOk){var c=h('input',{type:'checkbox'});c.checked=!!g.ok;c.addEventListener('change',function(){cset(g.id,'ok',c.checked);refreshCardState(g.id)});
-    b.appendChild(h('label',{class:'check'},c,'Nombre y cargo validados con la persona / institución'))}
-  var ce=colorEditor(g);if(ce)b.appendChild(ce);
-  return b}
+  // ---------- avisos
+  var toastT = 0;
+  function aviso(txt, ok) { var t = $("toast"); t.textContent = txt; t.className = ok ? "ok" : ""; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, 4200); }
 
-function pickFile(accept,cb){var i=h('input',{type:'file',accept:accept});i.onchange=function(){if(i.files[0])cb(i.files[0])};i.click()}
-function uploadMedia(file,done){toast('Subiendo '+file.name+'…');
-  CG.media.upload(file,store).then(function(r){var L=U.clone(cfg().library||{});
-    L[r.id]={id:r.id,name:file.name,src:r.src,type:/image/.test(file.type)?'image':'video',size:file.size};store.set('config/library',L);toast('Archivo listo: '+file.name);done&&done(r.src,r)})
-   .catch(function(e){toast(e.message||'No se pudo subir el archivo.')})}
+  // ---------- configuración compartida (se siembra una sola vez; nunca se pisa lo ya guardado)
+  function ensureConfig() {
+    var c = store.get("config");
+    if (!c || !c.graficas) { store.set("config", BP.clone(DEF)); }
+    else {
+      Object.keys(DEF.graficas).forEach(function (id) { if (!c.graficas[id]) { store.set("config/graficas/" + id, DEF.graficas[id]); } });
+      Object.keys(DEF.medios).forEach(function (id) { if (!(c.medios && c.medios[id])) { store.set("config/medios/" + id, DEF.medios[id]); } });
+      if (!c.botonera) { store.set("config/botonera", DEF.botonera); }
+    }
+    seedOk = true;
+  }
+  function editable() { if (!seedOk || !tree.config) { aviso("Conectando con la sala… espera un segundo."); return false; } return true; }
 
-function card(id){var g=G(id);if(!g)return null;
-  var c=h('div',{class:'card'+(isOn(id)?' on':''),'data-gid':id});
-  var chips=[h('span',{class:'chip',text:g.kind||'GC'})];var k=keyOf(id);if(k)chips.push(h('span',{class:'chip',text:k}));
-  c.appendChild(h('div',{class:'ch'},h('span',{class:'dot'}),h('span',{class:'cname',text:g.name}),chips,h('span',{class:'chip bad warnc',text:'PENDIENTE'}),h('span',{class:'chip warn okc',text:'VALIDAR'})));
-  c.appendChild(editorBody(g));
-  c.appendChild(h('div',{class:'warn-txt why'}));
-  c.appendChild(h('div',{class:'acts'},
-    h('button',{class:'btn green',text:'Mostrar',onclick:function(){show(id)}}),
-    h('button',{class:'btn redd',text:'Ocultar',onclick:function(){hide(id)}}),
-    h('button',{class:'btn',text:'Actualizar',onclick:function(){update(id)}}),
-    h('button',{class:'btn prevb',text:'Prev',onclick:function(){preview(id);refreshPrevButtons()}})));
-  stateOfCard(c,g);return c}
-function stateOfCard(c,g){var why=whyNot(g);
-  $('.warnc',c).style.display=(pend(g)||nofile(g))?'':'none';$('.okc',c).style.display=(g.needsOk&&!g.ok)?'':'none';
-  $('.why',c).textContent=why;$('.why',c).style.display=why?'':'none'}
-function refreshCardState(id){$$('.card[data-gid="'+id+'"]').forEach(function(c){stateOfCard(c,G(id))});$$('.bb[data-gid="'+id+'"]').forEach(function(b){b.classList.toggle('off',!!whyNot(G(id)))})}
-function refreshPrevButtons(){var p=mons&&mons.prevId;$$('.card').forEach(function(c){$('.prevb',c).classList.toggle('act',c.getAttribute('data-gid')===p)})}
-function refreshLive(){$$('.card').forEach(function(c){var on=isOn(c.getAttribute('data-gid'));c.classList.toggle('on',on)});
-  $$('.bb').forEach(function(b){b.classList.toggle('on',isOn(b.getAttribute('data-gid')))});
-  $$('.gchip').forEach(function(b){b.classList.toggle('on',isOn(b.getAttribute('data-gid')))})}
+  // ---------- acciones sobre la salida
+  function mostrar(gid, canal) {
+    canal = canal || "aire";
+    var g = G(gid); if (!g) { return false; }
+    var p = pendCampos(g);
+    if (p.length) { aviso("Faltan datos en «" + g.nombre + "»: " + p.map(function (x) { return campoDef(g.tipo, x.k).l; }).join(", ") + ". Complétalos antes de mostrar."); return false; }
+    store.set("state/" + canal + "/" + g.capa, { gid: gid, ts: Date.now(), datos: BP.clone(g.datos) });
+    return true;
+  }
+  function ocultar(gid, canal) {
+    canal = canal || "aire"; var g = G(gid); if (!g) { return; }
+    var e = st(canal, g.capa); if (e && e.gid === gid) { store.remove("state/" + canal + "/" + g.capa); }
+  }
+  function alAire(gid) { var g = G(gid), e = g && st("aire", g.capa); return !!(e && e.gid === gid); }
+  function alternar(gid) { if (alAire(gid)) { ocultar(gid); } else { mostrar(gid); } }
+  function actualizar(gid) { if (alAire(gid)) { mostrar(gid); } else { aviso("«" + G(gid).nombre + "» no está al aire: usa MOSTRAR.", false); } }
+  function limpiar() { if (confirm("¿Limpiar toda la salida? Se ocultan todas las gráficas al aire.")) { store.remove("state/aire"); } }
 
-/* ---------- dispositivo ---------- */
-function deviceMode(){var d=localStorage.getItem('cg:device')||'auto';
-  if(d==='auto')return (w.matchMedia&&w.matchMedia('(pointer:coarse)').matches)||w.innerWidth<820?'botonera':'completo';return d}
+  // ---------- dispositivo y vista
+  function esTactil() {
+    var ua = navigator.userAgent || "", t = navigator.maxTouchPoints || 0;
+    return /iPad|iPhone|Android|Mobile/.test(ua) || (/Macintosh/.test(ua) && t > 1);   // iPadOS en modo escritorio se anuncia como Mac con pantalla táctil
+  }
+  function dispositivo() {
+    var m = P.dispositivo || localStorage.getItem("bp:dispositivo") || "auto";
+    if (m === "auto") { return esTactil() ? "botonera" : "completo"; }
+    return m;
+  }
+  function setVista(v) {
+    if (dispositivo() === "botonera") { v = "botonera"; }
+    vista = v; try { localStorage.setItem("bp:vista", v); } catch (e) {}
+    $("v-control").hidden = v === "botonera"; $("v-botonera").hidden = v !== "botonera"; $("monitores").hidden = v !== "visual";
+    Array.prototype.forEach.call(document.querySelectorAll("#tabs .tab"), function (b) { b.classList.toggle("sel", b.dataset.v === v); });
+    if (v === "visual") { montarMonitores(); }
+    pintar();
+  }
 
-/* ---------- vistas ---------- */
-var app=function(){return $('#app')};
-function rerender(){
-  var a=app();if(!a)return;a.innerHTML='';
-  if(!store.config())return;
-  var dev=deviceMode();if(dev==='botonera')ui.view='botonera';
-  a.appendChild(header(dev));
-  if(ui.view==='botonera')a.appendChild(botonera());
-  else a.appendChild(control(ui.view==='visual'));
-  refreshLive();refreshPrevButtons()}
-function header(dev){
-  var tabs=h('nav',{class:'tabs'});
-  if(dev!=='botonera')[['control','Control'],['visual','Control + Visual'],['botonera','Botonera']].forEach(function(t){
-    tabs.appendChild(h('button',{class:'btn'+(ui.view===t[0]?' act':''),text:t[1],onclick:function(){ui.view=t[0];saveUi();rerender()}}))});
-  var st=h('span',{class:'status',id:'status'});
-  return h('header',{class:'top'},h('div',{class:'logo',html:'FRIKITAL <b>CG</b>'}),tabs,h('div',{class:'grow'}),st,
-    h('button',{class:'btn pink',text:'Limpiar salida',onclick:clearAll}),h('button',{class:'btn',title:'Configuración','aria-label':'Configuración',text:'⚙',onclick:function(){openSettings('botonera')}}))}
-function setStatus(){var s=$('#status');if(!s)return;var ok=store.mode==='local'||/en línea/.test(statusTxt);
-  s.className='status'+(ok?' ok':'');s.innerHTML='<i></i>';s.appendChild(document.createTextNode((store.mode==='local'?'modo local':'en línea')+' · sala '+conn.sala+(ok||!statusTxt?'':' · '+statusTxt)))}
+  // ---------- monitores (iframes de la salida: previa y al aire)
+  function hashBase() { var h = []; if (P.sala) { h.push("sala=" + encodeURIComponent(P.sala)); } if (P.db) { h.push("db=" + encodeURIComponent(P.db)); } return h.join("&"); }
+  function urlDe(pagina, extra) { var u = new URL(pagina, location.href).href.split("#")[0], h = hashBase(); return u + "#" + h + (extra ? (h ? "&" : "") + extra : ""); }
+  var monOk = false;
+  function montarMonitores() {
+    if (monOk) { return; } monOk = true;
+    [["monP", "canal=preview"], ["monA", "canal=aire"]].forEach(function (m) {
+      var box = $(m[0]), f = document.createElement("iframe");
+      f.src = urlDe("salida.html", m[1] + "&fondo=cuadros&monitor=1&silencio=1"); f.setAttribute("title", m[1]); box.appendChild(f);
+      var fit = function () { f.style.transform = "scale(" + (box.clientWidth / 1920) + ")"; };
+      if (window.ResizeObserver) { new ResizeObserver(fit).observe(box); } fit();
+    });
+  }
 
-function control(withMon){
-  var wrap=h('div'),n=ui.stream;
-  var sb=h('div',{class:'streams'});
-  for(var i=1;i<=7;i++)(function(i){sb.appendChild(h('button',{class:'st'+(i===n?' act':''),onclick:function(){ui.stream=i;ui.step=0;saveUi();rerender()}},h('b',{text:i}),h('small',{text:STN[i-1]})))})(i);
-  wrap.appendChild(sb);
-  if(withMon){var m=ensureMons(),pv=h('div',{class:'monbox'},h('h4',{text:'VISTA PREVIA · solo operador'})),ar=h('div',{class:'monbox'},h('h4',{class:'air',text:'AL AIRE'}));
-    wrap.appendChild(h('div',{class:'mons'},pv,ar));attachMon(m.prev,pv);attachMon(m.air,ar)}
-  var s=libretos&&libretos[n],cols=h('div',{class:'cols'});
-  /* escaleta */
-  var esc=h('div',{class:'sec'});
-  esc.appendChild(h('h3',null,'Escaleta · Streaming '+n,
-    h('button',{class:'btn small',text:'◀ Re Pág',onclick:function(){stepMove(-1)}}),h('button',{class:'btn small',text:'Av Pág ▶',onclick:function(){stepMove(1)}})));
-  if(!s)esc.appendChild(h('div',{class:'help',text:'Cargando libreto…'}));
-  else s.steps.forEach(function(st,idx){
-    var gids=stepGids(n,st);
-    var el=h('div',{class:'step'+(idx===ui.step?' cur':''),'data-i':idx,onclick:function(){ui.step=idx;markSteps()}},
-      h('div',{class:'l1'},h('span',{class:'tc',text:st.tc+' · '+st.dur}),h('span',{class:'bl',text:st.block}),h('span',{class:'cm',text:st.cam||''})),
-      h('div',{class:'l2',text:st.graphic||''}),st.notes?h('div',{class:'l3',text:st.notes}):null,
-      h('div',{class:'txt',text:st.text||''}),
-      gids.length?h('div',{class:'gchips'},gids.map(function(id){return h('button',{class:'gchip','data-gid':id,text:G(id).name,onclick:function(ev){ev.stopPropagation();toggle(id)}})})):null);
-    el.addEventListener('dblclick',function(){el.classList.toggle('open')});
-    esc.appendChild(el)});
-  /* gráficas */
-  var gr=h('div',{class:'sec'});
-  var ids=ui.all?cfg().order.filter(function(id){return G(id)}):streamGids(n);
-  gr.appendChild(h('h3',null,'Gráficas · '+(ui.all?'todas':STN[n-1].toUpperCase()),
-    h('button',{class:'btn small',text:ui.all?'Solo este streaming':'Ver todas',onclick:function(){ui.all=!ui.all;rerender()}})));
-  if(!ids.length)gr.appendChild(h('div',{class:'help',text:'Este streaming no tiene gráficas asociadas.'}));
-  ids.forEach(function(id){var c=card(id);c&&gr.appendChild(c)});
-  cols.appendChild(esc);cols.appendChild(gr);wrap.appendChild(cols);return wrap}
-function markSteps(){$$('.step').forEach(function(e){e.classList.toggle('cur',+e.getAttribute('data-i')===ui.step)})}
-function stepMove(d){var s=libretos&&libretos[ui.stream];if(!s)return;ui.step=Math.max(0,Math.min(s.steps.length-1,ui.step+d));markSteps();
-  var e=$('.step.cur');if(e&&e.scrollIntoView)e.scrollIntoView({block:'nearest',behavior:'smooth'})}
+  // ---------- escaleta
+  function chipsHTML(ids) {
+    return ids.map(function (id) { var g = G(id); return g ? '<span class="chip" data-gid="' + id + '"><button class="cn">' + esc(g.nombre) + '</button><button class="ct" aria-label="Mostrar u ocultar">▶</button></span>' : ""; }).join("");
+  }
+  function construirEscaleta() {
+    var h = "", lastB = 0, lastS = "";
+    ESC.forEach(function (r) {
+      if (r.bloque !== lastB) { lastB = r.bloque; h += '<div class="blq">BLOQUE ' + r.bloque + "</div>"; }
+      if (r.seccion !== lastS) { lastS = r.seccion; h += '<div class="sec">' + esc(r.seccion) + "</div>"; }
+      h += '<div class="paso" data-id="' + r.id + '"><div class="pt">' + r.tiempo + '</div><div class="pb"><b>' + esc(r.titulo) + "</b>" +
+           (r.grafica ? "<small>" + esc(r.grafica) + "</small>" : "") +
+           ((r.ids.length || (r.grafica && !r.ids.length)) ? '<div class="chips">' + chipsHTML(r.ids) + (r.grafica && !r.ids.length ? '<span class="fut">gráfica pendiente de construir (hito 3)</span>' : "") + "</div>" : "") + "</div></div>";
+    });
+    $("escList").innerHTML = h; escBuilt = true;
+  }
+  function pasoIdx() { var id = BP.getPath(tree, "state/paso"), i; for (i = 0; i < ESC.length; i++) { if (ESC[i].id === id) { return i; } } return 0; }
+  function irPaso(d) {
+    var i = Math.max(0, Math.min(ESC.length - 1, pasoIdx() + d));
+    store.set("state/paso", ESC[i].id);
+    if (ESC[i].ids.length) { sel = ESC[i].ids[0]; }
+  }
+  function pintarEscaleta() {
+    if (!escBuilt) { construirEscaleta(); }
+    var cur = pasoIdx(), curId = ESC[cur].id;
+    Array.prototype.forEach.call($("escList").querySelectorAll(".paso"), function (p) {
+      var on = p.dataset.id === curId; if (p.classList.contains("cur") !== on) { p.classList.toggle("cur", on); if (on && vista !== "botonera") { var L = $("escList"); L.scrollTop = Math.max(0, p.offsetTop - L.clientHeight / 3); } }
+    });
+    Array.prototype.forEach.call($("escList").querySelectorAll(".chip"), function (c) {
+      var id = c.dataset.gid, g = G(id);
+      c.classList.toggle("on", alAire(id)); c.classList.toggle("sel", sel === id); c.classList.toggle("pend", !!(g && pendCampos(g).length));
+      c.querySelector(".ct").textContent = alAire(id) ? "■" : "▶";
+    });
+    $("pInfo").textContent = "Paso " + ESC[cur].n + " de " + ESC.length + " · " + ESC[cur].tiempo;
+  }
 
-/* ---------- botonera ---------- */
-function botonera(){
-  var wrap=h('div'),B=cfg().buttons;
-  wrap.appendChild(h('div',{class:'bhead'},
-    h('button',{class:'btn'+(ui.edit?' act':''),text:ui.edit?'Terminar edición':'Editar botonera',onclick:function(){ui.edit=!ui.edit;rerender()}}),
-    ui.edit?h('button',{class:'btn green',text:'+ Botón',onclick:function(){var o=cfg().order.filter(function(id){return !B.some(function(b){return b.gid===id})})[0]||cfg().order[0];
-      store.set('config/buttons',B.concat([{gid:o,key:''}]));rerender()}}):null,
-    ui.edit?h('span',{class:'help',text:'Toca un botón para editarlo. Arrastra para ordenar (o usa ◀ ▶ dentro del editor).'}):null));
-  var grid=h('div',{class:'bgrid'});
-  B.forEach(function(b,i){var g=G(b.gid);if(!g)return;
-    var el=h('div',{class:'bb'+(ui.edit?' edit':'')+(whyNot(g)?' off':''),'data-gid':b.gid,'data-i':i,draggable:ui.edit?'true':null,role:'button',tabindex:0},
-      h('div',{class:'nm',text:g.name}),
-      h('div',{class:'meta'},h('span',{class:'chip',text:g.kind||'GC'}),b.key?h('span',{class:'chip',text:b.key}):null,(pend(g)||nofile(g))?h('span',{class:'chip bad',text:'PENDIENTE'}):null),
-      ui.edit?h('span',{class:'mv',text:'✎'}):null);
-    el.addEventListener('click',function(){if(ui.edit)editButton(i);else toggle(b.gid)});
-    if(ui.edit){
-      el.addEventListener('dragstart',function(e){e.dataTransfer.setData('text/plain',String(i));el.classList.add('drag')});
-      el.addEventListener('dragend',function(){el.classList.remove('drag')});
-      el.addEventListener('dragover',function(e){e.preventDefault()});
-      el.addEventListener('drop',function(e){e.preventDefault();var from=+e.dataTransfer.getData('text/plain');if(isNaN(from)||from===i)return;
-        var arr=B.slice(),m=arr.splice(from,1)[0];arr.splice(i,0,m);store.set('config/buttons',arr);rerender()})}
-    grid.appendChild(el)});
-  if(!B.length)wrap.appendChild(h('div',{class:'help',style:'padding:0 16px',text:'No hay botones. Entra a Editar botonera y agrega uno.'}));
-  wrap.appendChild(grid);return wrap}
-function keyCapture(input,onKey){
-  input.readOnly=true;input.placeholder='pulsa una tecla';
-  input.addEventListener('keydown',function(e){e.preventDefault();e.stopPropagation();var k=normKey(e);if(!k)return;input.value=k;onKey(k)})}
-function normKey(e){var k=e.key;if(['Shift','Control','Alt','Meta','CapsLock','Dead'].indexOf(k)>=0)return '';if(k===' ')return 'Space';return k.length===1?k.toUpperCase():k}
-function editButton(i){
-  var B=U.clone(cfg().buttons),b=B[i];if(!b)return;
-  var body=h('div'),g;
-  function build(){body.innerHTML='';g=G(b.gid);
-    var sel=h('select');cfg().order.forEach(function(id){if(G(id))sel.appendChild(h('option',{value:id,text:G(id).name,selected:id===b.gid}))});
-    sel.addEventListener('change',function(){B[i].gid=sel.value;b=B[i];store.set('config/buttons',B);build()});
-    var key=h('input',{type:'text',class:'keyin',value:b.key||''});
-    keyCapture(key,function(k){B[i].key=k;store.set('config/buttons',B)});
-    body.appendChild(h('span',{class:'fl',text:'Gráfica'}));body.appendChild(sel);
-    body.appendChild(h('span',{class:'fl',text:'Tecla (F13–F24 o cualquier tecla)'}));
-    body.appendChild(h('div',{class:'row'},key,h('button',{class:'btn small',text:'Quitar tecla',onclick:function(){B[i].key='';store.set('config/buttons',B);key.value=''}})));
-    if(B.some(function(x,j){return j!==i&&x.key&&x.key===b.key}))body.appendChild(h('div',{class:'warn-txt',text:'Ojo: otra gráfica usa la misma tecla.'}));
-    body.appendChild(h('hr',{style:'border-color:#392a72;margin:14px 0'}));
-    body.appendChild(editorBody(g));
-    body.appendChild(h('div',{class:'acts'},
-      h('button',{class:'btn',text:'◀ Mover',disabled:i===0,onclick:function(){var a=B.slice(),m=a.splice(i,1)[0];a.splice(i-1,0,m);store.set('config/buttons',a);closeModal();rerender()}}),
-      h('button',{class:'btn',text:'Mover ▶',disabled:i===B.length-1,onclick:function(){var a=B.slice(),m=a.splice(i,1)[0];a.splice(i+1,0,m);store.set('config/buttons',a);closeModal();rerender()}}),
-      h('button',{class:'btn',text:'Actualizar al aire',onclick:function(){update(b.gid)}}),
-      h('button',{class:'btn redd',text:'Quitar botón',onclick:function(){B.splice(i,1);store.set('config/buttons',B);closeModal();rerender()}})))}
-  build();modal('Editar botón',body,function(){rerender()})}
+  // ---------- editor de la gráfica seleccionada
+  function setDato(k, v) { if (!sel || !editable()) { return; } store.set("config/graficas/" + sel + "/datos/" + k, v); }
+  function campoHTML(c, g, pre) {
+    var v = g.datos[c.k], pend = typeof v === "string" && /PENDIENTE_/i.test(v), id = (pre || "f_") + c.k, h = '<div class="f' + (pend ? " pend" : "") + '" data-k="' + c.k + '">';
+    if (c.t === "check") { return h + '<label class="chk"><input type="checkbox" id="' + id + '"> ' + esc(c.l) + "</label></div>"; }
+    h += '<label for="' + id + '">' + esc(c.l) + "</label>";
+    if (c.t === "color") { h += '<input type="color" id="' + id + '">'; }
+    else if (c.t === "num") { h += '<input type="number" id="' + id + '" min="' + c.min + '" max="' + c.max + '">'; }
+    else if (c.t === "sel") { h += '<select id="' + id + '">' + Object.keys(c.op).map(function (o) { return '<option value="' + o + '">' + esc(c.op[o]) + "</option>"; }).join("") + "</select>"; }
+    else if (c.t === "medio") {
+      var m = medios(); h += '<select id="' + id + '">' + (pend ? '<option value="' + esc(v) + '">' + esc(v) + "</option>" : "") + Object.keys(m).map(function (o) { return '<option value="' + o + '">' + esc(m[o].nombre) + "</option>"; }).join("") + "</select>";
+    } else { h += '<input type="text" id="' + id + '" autocomplete="off">'; }
+    return h + '<div class="warn" hidden>PENDIENTE: no saldrá en pantalla hasta que lo completes.</div></div>';
+  }
+  function construirEditor() {
+    var g = sel && G(sel), box = $("editor");
+    if (!g) { box.innerHTML = '<h3>Elige una gráfica</h3><div class="sub">Toca el nombre de una gráfica en la escaleta (o un paso) para editarla.</div>'; edKey = ""; return; }
+    var campos = CAMPOS[g.tipo] || [];
+    box.innerHTML = "<h3>" + esc(g.nombre) + '</h3><div class="sub">Capa «' + esc(g.capa) + "» · tecla " + esc(g.tecla || "—") + "</div>" +
+      campos.map(function (c) { return campoHTML(c, g); }).join("") +
+      '<div class="acc"><button class="b-prev" data-a="previa">PREVIA</button><button class="b-show" data-a="mostrar">MOSTRAR</button>' +
+      '<button class="b-hide" data-a="ocultar">OCULTAR</button><button class="b-upd" data-a="actualizar">ACTUALIZAR</button></div><div class="state" id="edState"></div>';
+    campos.forEach(function (c) {
+      var el = $("f_" + c.k); if (!el) { return; }
+      var ev = c.t === "color" ? "input" : "change";
+      el.addEventListener(ev, function () { setDato(c.k, c.t === "check" ? el.checked : (c.t === "num" ? +el.value : el.value)); });
+    });
+    box.querySelector(".acc").addEventListener("click", function (e) {
+      var a = e.target.getAttribute("data-a"); if (!a) { return; }
+      if (a === "previa") { mostrar(sel, "preview"); if (vista === "control") { aviso("Enviada a la vista previa (cambia a «Control + Visual» para verla).", true); } }
+      else if (a === "mostrar") { mostrar(sel); } else if (a === "ocultar") { ocultar(sel); ocultar(sel, "preview"); } else if (a === "actualizar") { actualizar(sel); }
+    });
+    edKey = sel;
+  }
+  function pintarEditor() {
+    if (edKey !== sel || !$("editor").firstChild) { construirEditor(); }
+    var g = sel && G(sel); if (!g) { return; }
+    (CAMPOS[g.tipo] || []).forEach(function (c) {
+      var el = $("f_" + c.k); if (!el) { return; }
+      var v = g.datos[c.k], pend = typeof v === "string" && /PENDIENTE_/i.test(v), wrap = el.closest(".f");
+      wrap.classList.toggle("pend", pend); var w = wrap.querySelector(".warn"); if (w) { w.hidden = !pend; }
+      if (document.activeElement === el) { return; }
+      if (c.t === "check") { el.checked = !!v; } else if (c.t === "texto" && pend) { el.value = ""; el.placeholder = v; } else { el.value = v == null ? "" : v; if (c.t === "texto") { el.placeholder = ""; } }
+    });
+    var s = $("edState"), e = st("aire", g.capa), pr = st("preview", g.capa), es = BP.getPath(tree, "state/estado/" + g.capa), txt = "Fuera del aire", cls = "state";
+    if (e && e.gid === sel) { txt = "● AL AIRE"; cls += " on"; } else if (pr && pr.gid === sel) { txt = "En vista previa"; }
+    else if (e) { txt = "Fuera del aire (la capa «" + g.capa + "» está ocupada por «" + (G(e.gid) ? G(e.gid).nombre : e.gid) + "»)"; }
+    if (es && es.gid === sel && es.ok === false) { txt = "⚠ " + es.motivo; cls += " err"; }
+    s.textContent = txt; s.className = cls;
+  }
 
-/* ---------- ventanas ---------- */
-var openModals=[];
-function modal(title,content,onClose){
-  var ov=h('div',{class:'ov'}),m=h('div',{class:'modal'},h('div',{class:'mh'},h('h2',{text:title}),h('button',{class:'btn',text:'Cerrar',onclick:function(){closeModal()}})),content);
-  ov.appendChild(m);ov.addEventListener('mousedown',function(e){if(e.target===ov)closeModal()});document.body.appendChild(ov);
-  openModals.push({ov:ov,onClose:onClose});return ov}
-function closeModal(){var m=openModals.pop();if(!m)return;m.ov.remove();m.onClose&&m.onClose()}
+  // ---------- botonera
+  function slots() {
+    var b = cfg().botonera || {};
+    return Object.keys(b).map(function (k) { var o = BP.clone(b[k]); o.id = k; return o; }).sort(function (a, c) { return (a.orden || 0) - (c.orden || 0); });
+  }
+  function textoBoton(g) {
+    if (g.tipo === "gc_persona") { return g.datos.nombre; }
+    if (g.tipo === "video" || g.tipo === "imagen") { var m = medios()[g.datos.medio]; return m ? m.nombre : g.datos.medio; }
+    if (g.tipo === "logo") { return "Esquina"; }
+    return "";
+  }
+  function pintarBotonera() {
+    if (drag) { return; }
+    var grid = $("grid"), h = "";
+    grid.classList.toggle("edit", editMode); $("bAdd").hidden = !editMode; $("bEdit").textContent = editMode ? "✔ Listo" : "✎ Editar botonera";
+    $("bHint").textContent = editMode ? "Toca un botón para editarlo. Arrastra ⠿ para ordenar." : "Toca un botón para mostrar; toca otra vez para ocultar. Rojo = al aire.";
+    slots().forEach(function (s) {
+      var g = G(s.gid); if (!g) { return; }
+      var pend = pendCampos(g).length > 0, on = alAire(s.gid), t = textoBoton(g) || "";
+      h += '<div class="bt' + (on ? " on" : "") + (pend ? " pend" : "") + '" data-slot="' + s.id + '" role="button"><span class="bk">' + esc(s.tecla || "sin tecla") + '</span><span class="hd" data-hd="1">⠿</span><b>' + esc(g.nombre) + "</b><small>" + esc(t) + "</small></div>";
+    });
+    grid.innerHTML = h;
+  }
+  function tocaBoton(slotId) {
+    var s = (cfg().botonera || {})[slotId]; if (!s) { return; }
+    if (editMode) { abrirSlot(slotId); return; }
+    var g = G(s.gid); if (!g) { return; }
+    sel = s.gid; alternar(s.gid);
+  }
+  function addSlot() {
+    if (!editable()) { return; }
+    var usados = {}, list = slots(), max = 0; list.forEach(function (s) { usados[s.gid] = 1; max = Math.max(max, s.orden || 0); });
+    var libre = Object.keys(cfg().graficas).filter(function (id) { return !usados[id]; })[0] || Object.keys(cfg().graficas)[0];
+    var id = "b" + Date.now().toString(36);
+    store.set("config/botonera/" + id, { gid: libre, orden: max + 1, tecla: "" }); abrirSlot(id);
+  }
 
-/* ---------- configuración ---------- */
-var testRend=null,testWrap=null,testDemo=null;
-function ensureTest(){
-  if(testRend)return;
-  testWrap=h('div',{class:'mon testmon'});var stage=h('div',{class:'mon-stage'});testDemo=h('div',{class:'demo',text:'ANTES'});stage.appendChild(testDemo);testWrap.appendChild(stage);
-  testRend=new CG.Renderer(stage,CG.createMemStore(store),{side:'test',mute:false});
-  var fit=function(){var s=testWrap.clientWidth/1920;if(s>0)stage.style.transform='scale('+s+')'};if(w.ResizeObserver)new ResizeObserver(fit).observe(testWrap);testWrap._fit=fit}
-function slug(s){return (s||'g').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,18)||'g'}
-function trOptions(sel,cur){sel.appendChild(h('option',{value:'',text:'Sin transición'}));var T=cfg().transitions||{};
-  Object.keys(T).forEach(function(k){sel.appendChild(h('option',{value:k,text:T[k].name,selected:k===cur}))})}
-function openSettings(tab){
-  var body=h('div'),tabs=h('div',{class:'mtabs'}),cur=tab||'botonera';
-  var T=[['botonera','Botonera'],['graficas','Gráficas'],['transiciones','Transiciones'],['dispositivo','Dispositivo'],['general','General']];
-  function paint(){tabs.innerHTML='';T.forEach(function(t){tabs.appendChild(h('button',{class:'btn'+(cur===t[0]?' act':''),text:t[1],onclick:function(){cur=t[0];paint()}}))});
-    body.innerHTML='';({botonera:tabBotonera,graficas:tabGraficas,transiciones:tabTransiciones,dispositivo:tabDispositivo,general:tabGeneral})[cur](body,paint)}
-  var wrap=h('div',null,tabs,body);paint();modal('Configuración',wrap,function(){rerender()})}
+  // ---------- hoja (ventana) y editor de botón
+  function abrirSheet(html, bind) { $("sheet").innerHTML = html; $("sheetBg").hidden = false; if (bind) { bind($("sheet")); } }
+  function cerrarSheet() { $("sheetBg").hidden = true; $("sheet").innerHTML = ""; capturando = null; }
+  $("sheetBg").addEventListener("click", function (e) { if (e.target === $("sheetBg")) { cerrarSheet(); } });
 
-function tabBotonera(b,paint){
-  b.appendChild(h('div',{class:'help',text:'Elige qué gráficas tienen botón y con qué tecla se activan (F13–F24 o cualquier otra). Un toque muestra, otro oculta.'}));
-  var B=U.clone(cfg().buttons),list=h('div',{class:'tbl'});
-  function save(){store.set('config/buttons',B)}
-  B.forEach(function(x,i){
-    var sel=h('select',{class:'grow'});cfg().order.forEach(function(id){if(G(id))sel.appendChild(h('option',{value:id,text:G(id).name,selected:id===x.gid}))});
-    sel.onchange=function(){x.gid=sel.value;save()};
-    var key=h('input',{type:'text',class:'keyin',value:x.key||''});keyCapture(key,function(k){x.key=k;save();paint()});
-    list.appendChild(h('div',{class:'trow'},h('span',{class:'chip',text:i+1}),sel,key,
-      h('button',{class:'btn small',text:'▲',disabled:i===0,onclick:function(){var m=B.splice(i,1)[0];B.splice(i-1,0,m);save();paint()}}),
-      h('button',{class:'btn small',text:'▼',disabled:i===B.length-1,onclick:function(){var m=B.splice(i,1)[0];B.splice(i+1,0,m);save();paint()}}),
-      h('button',{class:'btn small redd',text:'✕',onclick:function(){B.splice(i,1);save();paint()}})))});
-  b.appendChild(list);
-  b.appendChild(h('div',{class:'acts'},h('button',{class:'btn green',text:'+ Agregar botón',onclick:function(){var o=cfg().order.filter(function(id){return !B.some(function(q){return q.gid===id})})[0]||cfg().order[0];B.push({gid:o,key:''});save();paint()}})))}
+  function abrirSlot(slotId) {
+    var s = (cfg().botonera || {})[slotId]; if (!s) { return; }
+    var g = G(s.gid), rap = RAPIDOS[g.tipo] || [];
+    var h = "<h3>Editar botón</h3>" +
+      '<div class="f"><label>Gráfica</label><select id="sg">' + Object.keys(cfg().graficas).map(function (id) { return '<option value="' + id + '"' + (id === s.gid ? " selected" : "") + ">" + esc(G(id).nombre) + "</option>"; }).join("") + "</select></div>" +
+      rap.map(function (k) { return campoHTML(campoDef(g.tipo, k), g, "s_"); }).join("") +
+      '<div class="f"><label>Tecla</label><div class="row"><button id="sk" class="btn">' + esc(s.tecla || "sin tecla") + '</button><button id="skx" class="btn">Quitar tecla</button></div><div class="hint" id="skh">Toca «' + esc(s.tecla || "sin tecla") + "» y luego pulsa la tecla que quieras (F13–F24 o cualquiera).</div></div>" +
+      '<div class="row"><button id="sdel" style="background:#5a1020">Quitar botón</button><button id="sok" class="btn" style="background:#0d6b3a">Listo</button></div>';
+    abrirSheet(h, function (box) {
+      $("sg").addEventListener("change", function () { store.set("config/botonera/" + slotId + "/gid", this.value); abrirSlot(slotId); });
+      rap.forEach(function (k) {
+        var c = campoDef(g.tipo, k), el = $("s_" + k), v = g.datos[k]; if (!el) { return; }
+        if (typeof v === "string" && /PENDIENTE_/i.test(v) && c.t === "texto") { el.placeholder = v; } else { el.value = v == null ? "" : v; }
+        el.addEventListener(c.t === "color" ? "input" : "change", function () { if (editable()) { store.set("config/graficas/" + s.gid + "/datos/" + k, el.value); } });
+      });
+      $("sk").addEventListener("click", function () { capturando = slotId; $("sk").textContent = "Pulsa una tecla…"; });
+      $("skx").addEventListener("click", function () { store.set("config/botonera/" + slotId + "/tecla", ""); abrirSlot(slotId); });
+      $("sdel").addEventListener("click", function () { store.remove("config/botonera/" + slotId); cerrarSheet(); });
+      $("sok").addEventListener("click", cerrarSheet);
+    });
+  }
 
-function tabGraficas(b,paint){
-  b.appendChild(h('div',{class:'help',html:'Renombra, crea, duplica o elimina gráficas. <b>Entra con / Sale con</b>: si eliges una transición, primero corre la transición y la gráfica cambia en el corte, con la pantalla tapada. <b>Grupo</b>: dos gráficas del mismo grupo no se superponen (la nueva reemplaza a la anterior).'}));
-  var list=h('div',{class:'tbl'}),groups=['gc','placa','fondo','motion'];
-  cfg().order.forEach(function(id){var g=G(id);if(!g)return;
-    var name=h('input',{type:'text',class:'grow',value:g.name});name.oninput=function(){cset(id,'name',name.value)};
-    function trSel(prop){var s=h('select');trOptions(s,g[prop]||'');s.onchange=function(){cset(id,prop,s.value||null)};return s}
-    var grp=h('select');groups.forEach(function(x){grp.appendChild(h('option',{value:x,text:'Grupo: '+x,selected:(g.group||id)===x}))});grp.appendChild(h('option',{value:id,text:'Independiente',selected:(g.group||id)===id&&groups.indexOf(g.group)<0}));
-    grp.onchange=function(){cset(id,'group',grp.value)};
-    var en=trSel('enter'),ex=trSel('exit');
-    list.appendChild(h('div',{class:'trow'},name,h('span',{class:'chip',text:g.type==='video'?'VIDEO':(g.type==='gc_nombre'?'NOMBRE':'TEXTO')}),grp,
-      h('label',{class:'help'},'Entra con ',en),h('label',{class:'help'},'Sale con ',ex),
-      h('button',{class:'btn small',text:'Duplicar',onclick:function(){dupGraphic(id);paint()}}),
-      h('button',{class:'btn small redd',text:'Eliminar',onclick:function(){if(confirm('¿Eliminar "'+g.name+'"?')){delGraphic(id);paint()}}})))});
-  b.appendChild(list);
-  var tsel=h('select');[['gc_apoyo','GC de texto (como GC 1)'],['gc_nombre','GC de nombre y cargo (como GC 2)'],['video','Video / animación']].forEach(function(o){tsel.appendChild(h('option',{value:o[0],text:o[1]}))});
-  var nm=h('input',{type:'text',placeholder:'Nombre de la nueva gráfica'});
-  b.appendChild(h('div',{class:'row',style:'margin-top:14px'},nm,tsel,h('button',{class:'btn green',text:'+ Crear',onclick:function(){
-    if(!nm.value.trim()){toast('Escribe un nombre.');return}newGraphic(nm.value.trim(),tsel.value);paint()}})))}
-function newGraphic(name,type){var id=slug(name)+'_'+Math.random().toString(36).slice(2,5);
-  var g={id:id,name:name,type:type,group:type==='video'?'motion':'gc',kind:type==='video'?'MOTION':'GC',colors:{},enter:null,exit:null};
-  if(type==='gc_apoyo')g.fields={texto:'PENDIENTE_TEXTO'};else if(type==='gc_nombre')g.fields={nombre:'PENDIENTE_NOMBRE',cargo:'PENDIENTE_CARGO'};
-  else g.video={src:'',bg:'opaque',loop:false,audio:true,onEnd:'hide',key:'#00ff00',sim:.32,smooth:.12};
-  var order=cfg().order.concat([id]),m={};m['config/graphics/'+id]=g;m['config/order']=order;store.multi(m)}
-function dupGraphic(id){var c=U.clone(G(id)),nid=slug(c.name)+'_'+Math.random().toString(36).slice(2,5);c.id=nid;c.name+=' (copia)';if(c.needsOk)c.ok=false;
-  var order=cfg().order.slice();order.splice(order.indexOf(id)+1,0,nid);var m={};m['config/graphics/'+nid]=c;m['config/order']=order;store.multi(m)}
-function delGraphic(id){var m={};m['config/graphics/'+id]=null;m['config/order']=cfg().order.filter(function(x){return x!==id});
-  m['config/buttons']=cfg().buttons.filter(function(x){return x.gid!==id});m['live/'+id]=null;store.multi(m)}
+  // ---------- teclas
+  function norm(e) { if (e.key === " ") { return "Espacio"; } return e.key.length === 1 ? e.key.toUpperCase() : e.key; }
+  var RESERVADAS = { Escape: 1, PageUp: 1, PageDown: 1, Tab: 1, Enter: 1, Shift: 1, Control: 1, Alt: 1, Meta: 1, CapsLock: 1 };
+  function slotPorTecla(k) { var l = slots(), i; for (i = 0; i < l.length; i++) { if (l[i].tecla && l[i].tecla === k) { return l[i]; } } return null; }
+  addEventListener("keydown", function (e) {
+    var k = norm(e), tag = (e.target.tagName || "").toLowerCase(), escribiendo = tag === "input" || tag === "textarea" || tag === "select";
+    if (capturando) {
+      e.preventDefault();
+      if (RESERVADAS[k]) { if (k === "Escape") { cerrarSheet(); } else { aviso("Esa tecla está reservada. Elige otra."); } return; }
+      var otro = slotPorTecla(k); if (otro && otro.id !== capturando) { aviso("«" + k + "» ya la usa el botón «" + (G(otro.gid) ? G(otro.gid).nombre : "") + "». Elige otra."); return; }
+      var id = capturando; capturando = null; store.set("config/botonera/" + id + "/tecla", k); abrirSlot(id); return;
+    }
+    if (k === "Escape") { cerrarSheet(); return; }
+    if ((k === "PageDown" || k === "PageUp") && !escribiendo) { e.preventDefault(); irPaso(k === "PageDown" ? 1 : -1); return; }
+    if (escribiendo && !/^F\d+$/.test(k)) { return; }
+    if (!$("sheetBg").hidden) { return; }
+    var s = slotPorTecla(k);
+    if (s) { e.preventDefault(); sel = s.gid; alternar(s.gid); }
+  });
 
-function tabTransiciones(b,paint){
-  b.appendChild(h('div',{class:'help',html:'Sube tus propios MP4/WebM o crea cortinas animadas. <b>Punto de corte</b>: momento de la transición en que la pantalla está tapada y la gráfica cambia. Usa PROBAR para verlo.'}));
-  ensureTest();b.appendChild(testWrap);testDemo.textContent='ANTES';setTimeout(function(){testWrap._fit&&testWrap._fit();testRend.sync()},30);
-  var T=cfg().transitions||{},list=h('div',{class:'tbl'});
-  Object.keys(T).forEach(function(id){var t=T[id];
-    function tset(k,v){store.set('config/transitions/'+id+'/'+k,v)}
-    var name=h('input',{type:'text',class:'grow',value:t.name});name.oninput=function(){tset('name',name.value)};
-    var row=h('div',{class:'trow'},name,h('span',{class:'chip',text:t.kind==='video'?'VIDEO':'CORTINA'}));
-    if(t.kind==='video'){
-      var bg=h('select');[['opaque','Opaco'],['alpha','Transparente'],['chroma','Fondo verde']].forEach(function(o){bg.appendChild(h('option',{value:o[0],text:o[1],selected:(t.bg||'opaque')===o[0]}))});bg.onchange=function(){tset('bg',bg.value);paint()};
-      var au=h('input',{type:'checkbox'});au.checked=!!t.audio;au.onchange=function(){tset('audio',au.checked)};
-      row.appendChild(bg);row.appendChild(h('label',{class:'check'},au,'Sonido'));
-    }else{
-      var st=h('select');[['wipe','Cortina'],['diagonal','Diagonal'],['iris','Círculo'],['barras','Barras']].forEach(function(o){st.appendChild(h('option',{value:o[0],text:o[1],selected:(t.style||'wipe')===o[0]}))});st.onchange=function(){tset('style',st.value)};
-      var dur=h('input',{type:'number',min:300,max:3000,step:50,value:t.dur||900,style:'width:110px'});dur.oninput=function(){tset('dur',+dur.value)};
-      var c1=h('input',{type:'color',value:t.c1||'#e0267f'});c1.oninput=function(){tset('c1',c1.value)};var c2=h('input',{type:'color',value:t.c2||'#2f9de0'});c2.oninput=function(){tset('c2',c2.value)};
-      row.appendChild(st);row.appendChild(h('label',{class:'help'},'ms ',dur));row.appendChild(c1);row.appendChild(c2)}
-    var cutv=h('span',{class:'chip',text:Math.round((t.cut==null?.5:t.cut)*100)+'%'});
-    var cut=h('input',{type:'range',min:0,max:100,step:1,value:Math.round((t.cut==null?.5:t.cut)*100),style:'flex:1 1 200px'});
-    cut.oninput=function(){cutv.textContent=cut.value+'%';tset('cut',cut.value/100)};
-    row.appendChild(h('span',{class:'help',text:'Corte'}));row.appendChild(cut);row.appendChild(cutv);
-    row.appendChild(h('button',{class:'btn small green',text:'Probar',onclick:function(){testRend.sync();testDemo.textContent='ANTES';testRend.runTransition(id,function(){testDemo.textContent='DESPUÉS'})}}));
-    row.appendChild(h('button',{class:'btn small redd',text:'✕',onclick:function(){if(!confirm('¿Eliminar la transición?'))return;var m={};m['config/transitions/'+id]=null;
-      Object.keys(cfg().graphics).forEach(function(g){var x=G(g);if(x.enter===id)m['config/graphics/'+g+'/enter']=null;if(x.exit===id)m['config/graphics/'+g+'/exit']=null});store.multi(m);paint()}}));
-    list.appendChild(row)});
-  if(!Object.keys(T).length)list.appendChild(h('div',{class:'help',text:'Aún no hay transiciones.'}));
-  b.appendChild(list);
-  var nm=h('input',{type:'text',placeholder:'Nombre de la transición'});
-  b.appendChild(h('div',{class:'row',style:'margin-top:14px'},nm,
-    h('button',{class:'btn green',text:'+ Nueva cortina animada',onclick:function(){var id=U.uid('t'),m={};m['config/transitions/'+id]={id:id,name:nm.value.trim()||'Cortina',kind:'cortina',style:'wipe',dur:900,cut:.5,c1:'#e0267f',c2:'#2f9de0'};store.multi(m);paint()}}),
-    h('button',{class:'btn',text:'Subir video MP4/WebM…',onclick:function(){pickFile('video/mp4,video/webm',function(f){uploadMedia(f,function(src){var id=U.uid('t'),m={};
-      m['config/transitions/'+id]={id:id,name:nm.value.trim()||f.name,kind:'video',src:src,bg:'opaque',cut:.5,audio:false,key:'#00ff00',sim:.32,smooth:.12};store.multi(m);paint()})})}})))}
+  // ---------- pendientes y menú
+  function abrirPendientes() {
+    var l = todosPendientes();
+    if (!l.length) { abrirSheet('<h3>Pendientes</h3><p>No hay datos pendientes. 🎉</p><div class="row"><button class="btn" id="px">Cerrar</button></div>', function () { $("px").onclick = cerrarSheet; }); return; }
+    var h = '<h3>Pendientes (' + l.length + ')</h3><div class="hint">Mientras un dato diga PENDIENTE_ la gráfica no sale en pantalla. Escribe el dato real para liberarla.</div><div class="plist">';
+    l.forEach(function (p, i) { h += '<div class="it"><label>' + esc(p.g.nombre) + " · " + esc(campoDef(p.g.tipo, p.k).l) + '</label><input type="text" data-i="' + i + '" placeholder="' + esc(p.v) + '" autocomplete="off"></div>'; });
+    abrirSheet(h + '</div><div class="row"><button class="btn" id="px">Cerrar</button></div>', function (box) {
+      $("px").onclick = cerrarSheet;
+      Array.prototype.forEach.call(box.querySelectorAll("input[data-i]"), function (inp) {
+        inp.addEventListener("change", function () { var p = l[+inp.dataset.i]; if (inp.value.trim() && editable()) { store.set("config/graficas/" + p.gid + "/datos/" + p.k, inp.value.trim()); aviso("Guardado: " + p.g.nombre, true); } });
+      });
+    });
+  }
+  function abrirMenu() {
+    var dev = localStorage.getItem("bp:dispositivo") || "auto";
+    var h = "<h3>Menú</h3>" +
+      '<div class="f"><label>Dispositivo</label><select id="mDev"><option value="auto">Automático (celular y tablet: solo botonera)</option><option value="botonera">Solo botonera</option><option value="completo">Panel completo</option></select></div>' +
+      '<div class="f"><label>Enlace de la SALIDA para OBS (fuente de navegador)</label><input type="text" id="mOut" readonly></div><div class="row"><button class="btn" id="cOut">Copiar enlace de la salida</button></div>' +
+      '<div class="f"><label>Enlace del PANEL (para el iPad)</label><input type="text" id="mPan" readonly></div><div class="row"><button class="btn" id="cPan">Copiar enlace del panel</button></div>' +
+      '<div class="hint" style="margin-top:12px">Modo: ' + esc(store.mode) + " · sala: " + esc(store.sala) + " · versión " + esc(BP.VERSION) + '</div><div class="row"><button class="btn" id="mOk" style="background:#0d6b3a">Cerrar</button></div>';
+    abrirSheet(h, function () {
+      $("mDev").value = dev; $("mOut").value = urlDe("salida.html"); $("mPan").value = urlDe("panel.html");
+      $("mDev").addEventListener("change", function () { localStorage.setItem("bp:dispositivo", this.value); location.reload(); });
+      var copiar = function (id) { var el = $(id); el.select(); try { navigator.clipboard.writeText(el.value).then(function () { aviso("Enlace copiado.", true); }, function () { document.execCommand("copy"); aviso("Enlace copiado.", true); }); } catch (e) { document.execCommand("copy"); aviso("Enlace copiado.", true); } };
+      $("cOut").onclick = function () { copiar("mOut"); }; $("cPan").onclick = function () { copiar("mPan"); }; $("mOk").onclick = cerrarSheet;
+    });
+  }
 
-function tabDispositivo(b,paint){
-  b.appendChild(h('div',{class:'help',text:'Define qué se muestra en este equipo. Automático: celular y tablet muestran solo la botonera; el computador, el panel completo. Se guarda solo en este equipo.'}));
-  var cur=localStorage.getItem('cg:device')||'auto';
-  [['auto','Automático'],['botonera','Solo botonera'],['completo','Panel completo']].forEach(function(o){
-    var r=h('input',{type:'radio',name:'dev'});r.checked=cur===o[0];r.onchange=function(){localStorage.setItem('cg:device',o[0])};
-    b.appendChild(h('label',{class:'check'},r,o[1]))});
-  b.appendChild(h('div',{class:'help',text:'Ahora mismo este equipo usa: '+(deviceMode()==='botonera'?'solo botonera':'panel completo')+'.'}))}
+  // ---------- eventos de la interfaz
+  Array.prototype.forEach.call(document.querySelectorAll("#tabs .tab"), function (b) { b.addEventListener("click", function () { setVista(b.dataset.v); }); });
+  $("bClear").addEventListener("click", limpiar); $("bGear").addEventListener("click", abrirMenu); $("bPend").addEventListener("click", abrirPendientes);
+  $("pPrev").addEventListener("click", function () { irPaso(-1); }); $("pNext").addEventListener("click", function () { irPaso(1); });
+  $("bEdit").addEventListener("click", function () { editMode = !editMode; pintar(); }); $("bAdd").addEventListener("click", addSlot);
+  $("escList").addEventListener("click", function (e) {
+    var row = e.target.closest(".paso"); if (!row) { return; }
+    var chip = e.target.closest(".chip");
+    store.set("state/paso", row.dataset.id);
+    if (chip) { sel = chip.dataset.gid; if (e.target.classList.contains("ct")) { alternar(sel); } }
+    else { var r = ESC.filter(function (x) { return x.id === row.dataset.id; })[0]; if (r && r.ids.length) { sel = r.ids[0]; } }
+    pintar();
+  });
+  $("grid").addEventListener("click", function (e) { if (e.target.closest(".hd")) { return; } var b = e.target.closest(".bt"); if (b) { tocaBoton(b.dataset.slot); } });
 
-function tabGeneral(b,paint){
-  var g=cfg().general;
-  var pn=h('input',{type:'text',value:g.programa||''});pn.oninput=function(){store.set('config/general/programa',pn.value)};
-  b.appendChild(h('span',{class:'fl',text:'Nombre del programa'}));b.appendChild(pn);
-  b.appendChild(h('span',{class:'fl',text:'Logo (imagen para el panel)'}));
-  b.appendChild(h('div',{class:'row'},g.logo?h('img',{src:g.logo,style:'max-height:56px;flex:0 0 auto'}):h('span',{class:'help',text:'Sin logo'}),
-    h('button',{class:'btn small',text:'Subir logo…',onclick:function(){pickFile('image/*',function(f){var img=new Image();img.onload=function(){var s=Math.min(1,480/img.width),c=document.createElement('canvas');c.width=img.width*s;c.height=img.height*s;c.getContext('2d').drawImage(img,0,0,c.width,c.height);store.set('config/general/logo',c.toDataURL('image/png'));paint()};img.src=URL.createObjectURL(f)})}}),
-    g.logo?h('button',{class:'btn small redd',text:'Quitar',onclick:function(){store.set('config/general/logo','');paint()}}):null));
-  var vel=h('input',{type:'range',min:.5,max:2,step:.1,value:g.velocidad||1}),vl=h('span',{class:'chip',text:'x'+(g.velocidad||1)});
-  vel.oninput=function(){vl.textContent='x'+vel.value;store.set('config/general/velocidad',+vel.value)};
-  b.appendChild(h('span',{class:'fl',text:'Velocidad de animaciones'}));b.appendChild(h('div',{class:'row'},vel,vl));
-  /* biblioteca */
-  b.appendChild(h('span',{class:'fl',text:'Biblioteca de videos'}));
-  var L=cfg().library||{},list=h('div',{class:'tbl'});
-  Object.keys(L).forEach(function(id){var x=L[id];list.appendChild(h('div',{class:'trow'},h('span',{class:'grow',text:x.name}),h('span',{class:'chip',text:/^db:/.test(x.src)?'EN LA SALA':/^idb:/.test(x.src)?'SOLO ESTE EQUIPO':'REPOSITORIO'}),
-    h('button',{class:'btn small redd',text:'✕',onclick:function(){store.set('config/library/'+id,null);paint()}})))});
-  b.appendChild(list);
-  b.appendChild(h('div',{class:'acts'},h('button',{class:'btn',text:'Subir MP4/WebM…',onclick:function(){pickFile('video/mp4,video/webm,video/quicktime',function(f){uploadMedia(f,function(){paint()})})}})));
-  b.appendChild(h('div',{class:'help',text:'Archivos grandes (más de 24 MB) conviene dejarlos en la carpeta media/ del repositorio y escribir su ruta en la biblioteca de tu copia de seguridad.'}));
-  /* copia de seguridad */
-  b.appendChild(h('span',{class:'fl',text:'Copia de seguridad'}));
-  b.appendChild(h('div',{class:'acts'},
-    h('button',{class:'btn',text:'Descargar copia',onclick:function(){var blob=new Blob([JSON.stringify({app:'frikital-cg',v:cfg().v,config:cfg()},null,1)],{type:'application/json'}),a=h('a',{href:URL.createObjectURL(blob),download:'frikital-cg-copia.json'});a.click()}}),
-    h('button',{class:'btn',text:'Restaurar copia…',onclick:function(){pickFile('application/json',function(f){f.text().then(function(t){try{var j=JSON.parse(t);if(!j.config||!j.config.graphics)throw 0;if(!confirm('Esto reemplaza toda la configuración. ¿Continuar?'))return;clearAll();store.set('config',j.config);toast('Copia restaurada');paint()}catch(e){toast('El archivo no es una copia válida.')}})})}}),
-    h('button',{class:'btn redd',text:'Restablecer catálogo',onclick:function(){if(confirm('Vuelve al catálogo original de la ficha (pierdes tus cambios). ¿Seguro?')){clearAll();store.set('config',CG.defaultConfig());paint()}}})));
-  /* conexión */
-  b.appendChild(h('span',{class:'fl',text:'Conexión de este equipo'}));
-  var mode=conn.mode,rl=h('input',{type:'radio',name:'cm'}),ro=h('input',{type:'radio',name:'cm'});rl.checked=mode==='local';ro.checked=mode==='online';
-  rl.onchange=function(){mode='local'};ro.onchange=function(){mode='online'};
-  var sala=h('input',{type:'text',value:conn.sala}),db=h('input',{type:'text',value:conn.db,placeholder:'https://tu-proyecto-default-rtdb.firebaseio.com'});
-  b.appendChild(h('label',{class:'check'},rl,'Local (un solo computador, sin internet)'));b.appendChild(h('label',{class:'check'},ro,'En línea (varios equipos, Firebase)'));
-  b.appendChild(h('div',{class:'row'},h('div',null,h('span',{class:'fl',text:'Sala'}),sala),h('div',null,h('span',{class:'fl',text:'URL de Realtime Database'}),db)));
-  b.appendChild(h('div',{class:'acts'},h('button',{class:'btn pink',text:'Guardar y recargar',onclick:function(){
-    if(mode==='online'&&!/^(https:\/\/|http:\/\/localhost)/.test(db.value.trim())){toast('Falta la URL https:// de la base de datos.');return}
-    localStorage.setItem('cg:conn',JSON.stringify({sala:sala.value.trim()||'frikital',db:db.value.trim().replace(/\/$/,''),mode:mode}));location.reload()}})));
-  var base=new URL('salida.html',location.href).href,q='?sala='+encodeURIComponent(conn.sala)+(conn.mode==='local'?'&local=1':'&db='+encodeURIComponent(conn.db));
-  b.appendChild(h('span',{class:'fl',text:'Enlace para la fuente de navegador de OBS (1920×1080)'}));
-  b.appendChild(h('div',{class:'url',text:base+q}));
-  b.appendChild(h('div',{class:'acts'},h('button',{class:'btn small',text:'Copiar enlace',onclick:function(){(navigator.clipboard?navigator.clipboard.writeText(base+q):Promise.reject()).then(function(){toast('Enlace copiado')},function(){toast('Copia el enlace a mano')})}})))}
+  // arrastrar para ordenar (con el asa ⠿; funciona con el dedo en el iPad)
+  $("grid").addEventListener("pointerdown", function (e) {
+    var hd = e.target.closest(".hd"); if (!hd || !editMode) { return; }
+    var el = hd.closest(".bt"); drag = { el: el }; el.classList.add("drag"); try { hd.setPointerCapture(e.pointerId); } catch (x) {}
+    e.preventDefault();
+  });
+  $("grid").addEventListener("pointermove", function (e) {
+    if (!drag) { return; }
+    var under = document.elementFromPoint(e.clientX, e.clientY), t = under && under.closest && under.closest(".bt");
+    if (t && t !== drag.el) {
+      var r = t.getBoundingClientRect(), after = (e.clientY > r.top + r.height / 2 && e.clientX > r.left) || e.clientY > r.bottom - 10;
+      var before = (e.clientY < r.top + r.height / 2) || e.clientX < r.left + r.width / 2 && e.clientY < r.bottom;
+      if (e.clientX > r.left + r.width / 2 || e.clientY > r.top + r.height * 0.6) { t.parentNode.insertBefore(drag.el, t.nextSibling); } else { t.parentNode.insertBefore(drag.el, t); }
+    }
+  });
+  function finArrastre() {
+    if (!drag) { return; }
+    var kids = Array.prototype.slice.call($("grid").children), el = drag.el; drag = null; el.classList.remove("drag");
+    kids.forEach(function (k, i) { store.set("config/botonera/" + k.dataset.slot + "/orden", i + 1); });
+  }
+  $("grid").addEventListener("pointerup", finArrastre); $("grid").addEventListener("pointercancel", finArrastre);
 
-/* ---------- teclado y arranque ---------- */
-document.addEventListener('keydown',function(e){
-  var t=e.target;if(t&&/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)&&!t.readOnly)return;
-  if(openModals.length||e.ctrlKey||e.metaKey||e.altKey)return;
-  if(e.key==='PageDown'||e.key==='PageUp'){if(ui.view!=='botonera'&&deviceMode()!=='botonera'){e.preventDefault();stepMove(e.key==='PageDown'?1:-1)}return}
-  var k=normKey(e);if(!k)return;var b=cfg().buttons.filter(function(x){return x.key&&x.key===k})[0];
-  if(b){e.preventDefault();if(!e.repeat)toggle(b.gid)}});
-var raf=0;
-function schedule(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;rerender();setStatus()})}
-store.onStatus(function(s){statusTxt=s;setStatus()});
-store.onChange(function(path){
-  if(!store.synced)return;
-  if(!store.state().config){store.set('config',CG.defaultConfig());return}
-  if(/^\/live/.test(path)){refreshLive();return}
-  var a=document.activeElement;
-  if(a&&/^(INPUT|TEXTAREA)$/.test(a.tagName)&&/\/(fields|colors|name|dur|cut|c1|c2|key|sim|smooth)/.test(path)){return}
-  schedule()});
-fetch('data/libretos.json?v=1.1.0').then(function(r){return r.json()}).then(function(j){libretos=j;schedule()}).catch(function(){});
-store.start();
-w.CGP={store:store,show:show,hide:hide,toggle:toggle,update:update,clearAll:clearAll,preview:preview,rerender:rerender,ui:ui,conn:conn};
-})(window);
+  // ---------- huincha "PREGUNTA Y RESPONDE" (tarjeta propia, visible en todas las vistas, también en la botonera del iPad)
+  // Reutiliza mostrar()/ocultar(): el texto se guarda en config/graficas/huincha_pregunta/datos/texto y, al aire, en state/aire/huincha.
+  var HU = "huincha_pregunta", huBuilt = false, huSucio = false;
+  function huTexto() { return $("huTxt").value.replace(/\s+/g, " ").trim(); }
+  function huGuardarBorrador() { if (seedOk && tree.config) { store.set("config/graficas/" + HU + "/datos/texto", huTexto()); huSucio = false; } }
+  function huAccion(a) {
+    if (!editable()) { return; }
+    var txt = huTexto();
+    if (a === "ocultar") { ocultar(HU); return; }
+    if (a === "limpiar") { $("huTxt").value = ""; huSucio = false; store.set("config/graficas/" + HU + "/datos/texto", ""); ocultar(HU); return; }
+    if (!txt) { aviso("Escribe la pregunta antes de mostrarla."); return; }
+    if (a === "actualizar" && !alAire(HU)) { aviso("La huincha no está al aire: usa MOSTRAR."); return; }
+    huGuardarBorrador(); mostrar(HU);
+  }
+  function construirHuincha() {
+    var top = $("top"); if (!top || huBuilt) { return; }
+    var c = document.createElement("section"); c.id = "huincha";
+    c.innerHTML = '<div class="huh"><b>HUINCHA — PREGUNTA Y RESPONDE</b><span class="hustate" id="huState">Fuera del aire</span></div>' +
+      '<textarea id="huTxt" rows="2" maxlength="400" placeholder="Escribe la pregunta…" autocomplete="off"></textarea>' +
+      '<div class="acc"><button class="b-show" data-h="mostrar">MOSTRAR</button><button class="b-hide" data-h="ocultar">OCULTAR</button><button class="b-upd" data-h="actualizar">ACTUALIZAR</button><button class="b-clr" data-h="limpiar">LIMPIAR</button></div>';
+    top.parentNode.insertBefore(c, top.nextSibling);
+    c.addEventListener("click", function (e) { var a = e.target.getAttribute("data-h"); if (a) { huAccion(a); } });
+    $("huTxt").addEventListener("input", function () { huSucio = true; pintar(); });
+    $("huTxt").addEventListener("change", huGuardarBorrador);
+    huBuilt = true;
+  }
+  function pintarHuincha() {
+    if (!huBuilt) { construirHuincha(); } if (!huBuilt) { return; }
+    var g = G(HU), t = $("huTxt"), s = $("huState"), e = st("aire", g.capa), on = !!(e && e.gid === HU), es = BP.getPath(tree, "state/estado/" + g.capa), txt = on ? "● AL AIRE" : "Fuera del aire", cls = "hustate" + (on ? " on" : "");
+    if (!huSucio && document.activeElement !== t) { var v = (g.datos && g.datos.texto) || ""; if (t.value !== v) { t.value = v; } }   // sigue el borrador de otros equipos (antes de comparar)
+    if (on && e.datos && e.datos.texto !== huTexto()) { txt += " · hay cambios sin actualizar"; cls += " chg"; }
+    if (es && es.gid === HU && es.ok === false) { txt = "⚠ " + es.motivo; cls += " err"; }
+    s.textContent = txt; s.className = cls;
+  }
+
+  // ---------- MEDIOS: adjuntar gráficas terminadas (video MP4/WebM o imagen PNG/WebP/JPG) y dejarlas como botones del control.
+  // Con token de GitHub (guardado solo en este equipo) el archivo se sube a la carpeta media/ del repositorio; sin token se registra
+  // y el archivo se sube a mano. El registro (config/medios + config/graficas + botonera) usa las estructuras que ya existen.
+  var mdBuilt = false, mdBusy = false, mdKey = "", MD_MAX = 60 * 1024 * 1024;
+  function ghCfg() {
+    var o = {}; try { o = JSON.parse(localStorage.getItem("bp:gh") || "{}"); } catch (e) { o = {}; }
+    return { token: o.token || "", repo: o.repo || "benjjaminro01-oss/bajo-presi-n", branch: o.branch || "main" };
+  }
+  function slug(s) { return String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 40) || "grafica"; }
+  function mdEstado(txt, cls) { var e = $("mdEst"); if (e) { e.textContent = txt; e.className = "state" + (cls ? " " + cls : ""); } }
+  function leerB64(file) {
+    return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(String(r.result).split(",")[1]); }; r.onerror = function () { rej(new Error("No se pudo leer el archivo")); }; r.readAsDataURL(file); });
+  }
+  function ghPut(path, b64, msg) {
+    var c = ghCfg(), url = "https://api.github.com/repos/" + c.repo + "/contents/" + path.split("/").map(encodeURIComponent).join("/"), h = { Authorization: "Bearer " + c.token, Accept: "application/vnd.github+json" };
+    return fetch(url + "?ref=" + encodeURIComponent(c.branch), { headers: h })
+      .then(function (r) { if (r.status === 200) { return r.json().then(function (j) { return j.sha; }); } if (r.status === 404) { return undefined; } throw new Error(r.status === 401 || r.status === 403 ? "GitHub rechazó el token (revisa permisos del repositorio)" : "GitHub respondió " + r.status); })
+      .then(function (sha) { var body = { message: msg, content: b64, branch: c.branch }; if (sha) { body.sha = sha; } return fetch(url, { method: "PUT", headers: h, body: JSON.stringify(body) }); })
+      .then(function (r) { if (!r.ok) { return r.json().then(function (j) { throw new Error((j && j.message) || ("GitHub respondió " + r.status)); }); } return r.json(); });
+  }
+  function esperarPublicado(path, intentos) {                    // GitHub Pages tarda 1-2 min en publicar el archivo nuevo
+    return fetch(path + "?v=" + Date.now(), { method: "HEAD", cache: "no-store" }).then(function (r) { return r.ok; }, function () { return false; })
+      .then(function (ok) { if (ok || intentos <= 0) { return ok; } return new Promise(function (res) { setTimeout(res, 8000); }).then(function () { return esperarPublicado(path, intentos - 1); }); });
+  }
+  function registrarMedio(o) {                                    // o: { id, nombre, tipo, archivo, croma, repetir }
+    var path = "media/" + o.archivo, m = { id: o.id, nombre: o.nombre }, g, slotsL = slots(), max = 0, hay = false;
+    if (o.tipo === "video") { m[/\.webm$/i.test(o.archivo) ? "webm" : "mp4"] = path; } else { m.img = path; }
+    if (o.croma) { m.chroma = { color: "#34FE00", similitud: 0.32, suavidad: 0.08 }; }
+    g = { id: o.id, nombre: o.nombre, tipo: o.tipo, capa: "video", orden: 100, tecla: "", boton: true, adjunta: true, archivo: o.archivo, datos: { medio: o.id, repetir: !!o.repetir }, entra: { tipo: "directo" }, sale: { tipo: "directo" } };
+    store.set("config/medios/" + o.id, m); store.set("config/graficas/" + o.id, g);
+    slotsL.forEach(function (s) { max = Math.max(max, s.orden || 0); if (s.gid === o.id) { hay = true; } });
+    if (!hay) { store.set("config/botonera/b" + Date.now().toString(36), { gid: o.id, orden: max + 1, tecla: "" }); }
+  }
+  function mdAdjuntar() {
+    if (!editable() || mdBusy) { return; }
+    var f = $("mdFile").files[0], ext, tipo, base, nombre, o, c = ghCfg();
+    if (!f) { aviso("Elige primero el archivo terminado."); return; }
+    ext = (f.name.split(".").pop() || "").toLowerCase();
+    tipo = ["mp4", "webm"].indexOf(ext) >= 0 ? "video" : (["png", "webp", "jpg", "jpeg"].indexOf(ext) >= 0 ? "imagen" : "");
+    if (!tipo) { aviso("Formato no compatible. Exporta a MP4 (H.264) o WebM; imágenes en PNG, WebP o JPG."); return; }
+    base = slug(f.name.replace(/\.[^.]+$/, "")); nombre = $("mdNom").value.trim() || f.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ");
+    o = { id: "adj_" + base, nombre: nombre, tipo: tipo, archivo: base + "." + (ext === "jpeg" ? "jpg" : ext), croma: $("mdFondo").value === "verde", repetir: tipo === "video" && $("mdRep").checked };
+    if (!c.token) {
+      registrarMedio(o); mdEstado("Registrada «" + nombre + "». Falta subir el archivo «" + o.archivo + "» a la carpeta media/ del repositorio (o conecta GitHub para subirlo desde aquí).", "err"); return;
+    }
+    if (f.size > MD_MAX) { aviso("El archivo pesa más de 60 MB: no se puede subir desde el panel. Comprímelo o súbelo a mano a media/."); return; }
+    mdBusy = true; mdEstado("Subiendo «" + o.archivo + "» a GitHub… (" + Math.round(f.size / 1048576 * 10) / 10 + " MB)");
+    leerB64(f).then(function (b64) { return ghPut("media/" + o.archivo, b64, "Adjuntar gráfica: " + nombre); })
+      .then(function () { registrarMedio(o); mdEstado("Subido. Esperando que GitHub Pages lo publique (1–2 min)…"); return esperarPublicado("media/" + o.archivo, 45); })
+      .then(function (ok) { mdBusy = false; mdEstado(ok ? "✔ «" + nombre + "» lista: está en la Botonera." : "Subida correcta, pero aún no se publica. Espera un momento y pruébala.", ok ? "" : "err"); $("mdFile").value = ""; $("mdNom").value = ""; })
+      .catch(function (e) { mdBusy = false; mdEstado("⚠ " + e.message, "err"); });
+  }
+  function mdQuitar(gid) {
+    if (!editable()) { return; }
+    var g = G(gid); if (!g || !g.adjunta || !confirm("¿Quitar «" + g.nombre + "» del control? (el archivo queda en el repositorio)")) { return; }
+    if (alAire(gid)) { ocultar(gid); }
+    slots().forEach(function (s) { if (s.gid === gid) { store.remove("config/botonera/" + s.id); } });
+    store.remove("config/graficas/" + gid); store.remove("config/medios/" + gid);
+  }
+  function mdProbar(gid) {                                          // diagnostica el archivo en ESTE navegador (OBS usa el suyo)
+    var g = G(gid), m = g && medios()[g.datos.medio], path = m && (m.mp4 || m.webm || m.img), url, fin;
+    if (!path) { mdEstado("Esta gráfica no tiene archivo registrado.", "err"); return; }
+    url = new URL(path, location.href).href; mdEstado("Probando «" + g.nombre + "»…");
+    fin = function (txt, bad) { mdEstado(txt, bad ? "err" : ""); };
+    fetch(path + "?v=" + Date.now(), { method: "HEAD", cache: "no-store" }).then(function (r) {
+      if (!r.ok) { fin("⚠ No se encuentra «" + path + "» (error " + r.status + "). Abre " + url + " para comprobarlo. El archivo debe estar en la carpeta media/ con ese nombre exacto (minúsculas, sin tildes ni espacios); si lo subiste hace poco, GitHub Pages tarda 1–2 min.", true); return; }
+      var done = false, el, tm, dim = function (w, h) { return (w === 1920 && h === 1080) ? "" : " ⚠ Mide " + w + "×" + h + " y la salida es 1920×1080: se estirará (exporta a 1920×1080)."; };
+      if (g.tipo === "imagen") {
+        el = new Image(); el.onload = function () { fin("✔ La imagen carga bien." + dim(el.naturalWidth, el.naturalHeight)); }; el.onerror = function () { fin("⚠ El archivo existe pero no es una imagen válida.", true); }; el.src = path + "?v=" + Date.now(); return;
+      }
+      el = document.createElement("video"); el.preload = "metadata"; el.muted = true;
+      tm = setTimeout(function () { if (!done) { done = true; fin("⚠ El navegador no pudo leer el video en 20 s (¿códec no compatible o archivo corrupto?).", true); } }, 20000);
+      el.onloadedmetadata = function () { if (done) { return; } done = true; clearTimeout(tm); fin("✔ El video se puede reproducir: " + Math.round(el.duration * 10) / 10 + " s, " + el.videoWidth + "×" + el.videoHeight + "." + dim(el.videoWidth, el.videoHeight)); };
+      el.onerror = function () { if (done) { return; } done = true; clearTimeout(tm); fin("⚠ El archivo existe pero este navegador no puede reproducirlo (códec no compatible o archivo dañado). Expórtalo de nuevo como MP4 H.264 de 8 bits 4:2:0 con audio AAC (o WebM).", true); };
+      el.src = path + "?v=" + Date.now();
+    }, function () { fin("⚠ Sin conexión: no se pudo comprobar el archivo.", true); });
+  }
+  function mdGithub() {
+    var c = ghCfg();
+    abrirSheet('<h3>Conexión con GitHub</h3><div class="hint">Permite subir archivos a la carpeta media/ desde este equipo. El token se guarda solo aquí (no se comparte con otros equipos). Usa un token «fine-grained» limitado a este repositorio con permiso <b>Contents: Read and write</b>.</div>' +
+      '<div class="f"><label>Token</label><input type="password" id="ghTok" autocomplete="off"></div><div class="f"><label>Repositorio (usuario/nombre)</label><input type="text" id="ghRepo"></div><div class="f"><label>Rama</label><input type="text" id="ghBr"></div>' +
+      '<div class="state" id="ghEst">' + (c.token ? "Token guardado en este equipo." : "Sin token: las gráficas se registran y el archivo se sube a mano.") + '</div>' +
+      '<div class="row"><button id="ghSave" style="background:#0d6b3a">Guardar y probar</button><button id="ghDel">Borrar token</button><button id="ghOk">Cerrar</button></div>',
+      function () {
+        $("ghTok").value = c.token; $("ghRepo").value = c.repo; $("ghBr").value = c.branch;
+        $("ghOk").onclick = cerrarSheet;
+        $("ghDel").onclick = function () { try { localStorage.removeItem("bp:gh"); } catch (e) {} $("ghTok").value = ""; $("ghEst").textContent = "Token borrado de este equipo."; };
+        $("ghSave").onclick = function () {
+          var o = { token: $("ghTok").value.trim(), repo: $("ghRepo").value.trim(), branch: $("ghBr").value.trim() || "main" };
+          try { localStorage.setItem("bp:gh", JSON.stringify(o)); } catch (e) {}
+          if (!o.token) { $("ghEst").textContent = "Guardado sin token."; return; }
+          $("ghEst").textContent = "Probando…";
+          fetch("https://api.github.com/repos/" + o.repo, { headers: { Authorization: "Bearer " + o.token, Accept: "application/vnd.github+json" } })
+            .then(function (r) { return r.json().then(function (j) { $("ghEst").textContent = r.ok ? (j.permissions && j.permissions.push === false ? "⚠ El token puede leer pero NO escribir en " + o.repo : "✔ Conectado a " + o.repo) : "⚠ " + (j.message || r.status); }); })
+            .catch(function () { $("ghEst").textContent = "⚠ Sin conexión con GitHub."; });
+        };
+      });
+  }
+  function construirMedios() {
+    var ref = $("huincha") || $("top"); if (!ref || mdBuilt) { return; }
+    var c = document.createElement("section"); c.id = "medios";
+    c.innerHTML = '<details><summary><b>MEDIOS — ADJUNTAR GRÁFICAS</b><span class="hint"> video MP4/WebM o imagen PNG/WebP/JPG</span></summary>' +
+      '<div class="f"><label>Archivo terminado</label><input type="file" id="mdFile" accept=".mp4,.webm,.png,.webp,.jpg,.jpeg"></div>' +
+      '<div class="f"><label>Nombre en el control</label><input type="text" id="mdNom" placeholder="Ej.: Tótem Spark Energy" autocomplete="off"></div>' +
+      '<div class="f"><label>Fondo del archivo</label><select id="mdFondo"><option value="">Normal (opaco o con transparencia propia)</option><option value="verde">Fondo verde croma #34FE00 → quitarlo</option></select></div>' +
+      '<label class="chk"><input type="checkbox" id="mdRep"> Repetir en bucle (solo video)</label>' +
+      '<div class="acc"><button class="b-show" id="mdAdd">ADJUNTAR</button><button id="mdGh">Conexión GitHub</button></div>' +
+      '<div class="state" id="mdEst">Elige un archivo y pulsa ADJUNTAR. Queda como botón en la Botonera.</div><div id="mdList"></div></details>';
+    ref.parentNode.insertBefore(c, ref.nextSibling);
+    $("mdAdd").addEventListener("click", mdAdjuntar); $("mdGh").addEventListener("click", mdGithub);
+    $("mdFile").addEventListener("change", function () { var f = this.files[0]; if (f && !$("mdNom").value) { $("mdNom").value = f.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " "); } });
+    $("mdList").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-md]"); if (!b) { return; }
+      if (b.dataset.md === "alt") { if (editable()) { sel = b.dataset.g; alternar(b.dataset.g); } } else if (b.dataset.md === "test") { mdProbar(b.dataset.g); } else { mdQuitar(b.dataset.g); }
+    });
+    mdBuilt = true;
+  }
+  function pintarMedios() {
+    if (!mdBuilt) { construirMedios(); } if (!mdBuilt) { return; }
+    var ids = Object.keys(cfg().graficas || {}).filter(function (id) { return G(id) && G(id).adjunta; }), es = BP.getPath(tree, "state/estado/video") || {};
+    function falla(id) { return es.gid === id && es.ok === false ? es.motivo : ""; }
+    var key = ids.map(function (id) { return id + (alAire(id) ? "*" : "") + G(id).nombre + falla(id); }).join("|");
+    if (key === mdKey) { return; } mdKey = key;
+    $("mdList").innerHTML = ids.length ? '<div class="hint" style="margin:10px 0 4px">Gráficas adjuntas (también están en la Botonera):</div>' + ids.map(function (id) {
+      var g = G(id), on = alAire(id);
+      return '<div class="mdrow' + (on ? " on" : "") + '"><div><b>' + esc(g.nombre) + '</b><small>' + esc(g.tipo + " · media/" + (g.archivo || "")) + '</small>' + (falla(id) ? '<small class="mdw">⚠ ' + esc(falla(id)) + ' — pulsa Probar</small>' : "") + '</div><button data-md="alt" data-g="' + esc(id) + '">' + (on ? "OCULTAR" : "MOSTRAR") + '</button><button data-md="test" data-g="' + esc(id) + '">Probar</button><button data-md="del" data-g="' + esc(id) + '">Quitar</button></div>';
+    }).join("") : "";
+  }
+
+  // ---------- pintado general
+  function pintar() { cancelAnimationFrame(raf); raf = requestAnimationFrame(pintarTodo); }
+  function pintarTodo() {
+    var pill = $("pill"); pill.textContent = (store.mode === "firebase" ? "● " : "") + estadoCon.texto + (store.mode === "firebase" ? " · sala " + String(store.sala).slice(0, 6) + "…" : "");
+    pill.className = "pill " + (estadoCon.ok ? "ok" : "bad");
+    var np = todosPendientes().length, bp = $("bPend"); bp.hidden = !np; bp.textContent = "⚠ " + np + " pendiente" + (np === 1 ? "" : "s");
+    if (vista !== "botonera") { pintarEscaleta(); pintarEditor(); } else { pintarBotonera(); }
+    pintarHuincha(); pintarMedios();
+  }
+
+  store.onStatus(function (s) { estadoCon = s; pintar(); });
+  store.onChange(function (t) { tree = t; pintar(); });
+  store.onReady(function () { ensureConfig(); pintar(); });
+  setTimeout(function () { if (!seedOk) { aviso("Sin conexión con la sala. Revisa internet y el código de sala del enlace."); } }, 8000);
+
+  // ---------- arranque
+  var v0 = P.vista || localStorage.getItem("bp:vista") || "control";
+  if (["control", "visual", "botonera"].indexOf(v0) < 0) { v0 = "control"; }
+  if (dispositivo() === "botonera") { $("tabs").hidden = true; }
+  setVista(v0);
+  window.BP.panel = { store: store, mostrar: mostrar, ocultar: ocultar, irPaso: irPaso };
+})();
