@@ -99,10 +99,11 @@
   };
   Video.prototype.out = function () { var v = this.el; try { v.pause(); } catch (e) {} if (v.parentNode) { v.parentNode.removeChild(v); } return Promise.resolve(); };
 
-  // ---------- gráfica: huincha "PREGUNTA Y RESPONDE"
+  // ---------- gráfica: huincha "PULSA Y RESPONDE"
   // El texto se ajusta solo: 1 línea grande, hasta 2 líneas más chicas y, si aun así no cabe, una línea que se desplaza (con pausa inicial).
   // Si cambia solo el texto (ACTUALIZAR) se hace un cambio suave sin sacar la barra.
   var HU_SEP = "\u00a0\u00a0\u00a0\u25c6\u00a0\u00a0\u00a0", HU_EASE = "cubic-bezier(.16,.84,.24,1)";
+  function huEtiqueta(d) { var e = String(d && d.etiqueta || "").toUpperCase(); return (!e || e === "PREGUNTA Y RESPONDE") ? "PULSA Y RESPONDE" : e; }   // el nombre anterior ya no se usa, aunque quede guardado en el estado
   function huTexto(t) { return String(t == null ? "" : t).replace(/\s+/g, " ").trim().slice(0, 400); }
   function huAn(node, kf, o) { o = o || {}; return node.animate(kf, { duration: BP.dur(o.duration || 400), delay: BP.dur(o.delay || 0), easing: o.easing || HU_EASE, fill: "both" }); }
   function Huincha(layer, datos) {
@@ -112,7 +113,7 @@
       '<div class="hu-tab"><span></span></div><div class="hu-win"><div class="hu-txt"></div></div><div class="hu-gauge"></div></div>';
     this.el = d; this.inn = d.firstChild; this.shape = d.querySelector(".hu-shape"); this.tab = d.querySelector(".hu-tab"); this.win = d.querySelector(".hu-win");
     this.txt = d.querySelector(".hu-txt"); this.gauge = d.querySelector(".hu-gauge"); this.marq = null; this.fx = null; this.texto = "";
-    d.querySelector(".hu-tab span").textContent = String(datos.etiqueta || "PREGUNTA Y RESPONDE").toUpperCase();
+    d.querySelector(".hu-tab span").textContent = huEtiqueta(datos);
     layer.appendChild(d);
     this.setTexto(huTexto(datos.texto));
   }
@@ -135,6 +136,7 @@
   };
   Huincha.prototype.update = function (datos) {
     var self = this, t = huTexto(datos.texto);
+    this.tab.querySelector("span").textContent = huEtiqueta(datos);                                  // ACTUALIZAR también refresca el rótulo
     if (t === this.texto) { return Promise.resolve(); }
     return new Promise(function (res) {
       var prev = self.fx, o = huAn(self.win, [{ opacity: 1, transform: "translateY(0)" }, { opacity: 0, transform: "translateY(-14px)" }], { duration: 200, easing: "ease-in" });

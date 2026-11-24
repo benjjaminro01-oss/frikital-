@@ -344,7 +344,7 @@
   }
   $("grid").addEventListener("pointerup", finArrastre); $("grid").addEventListener("pointercancel", finArrastre);
 
-  // ---------- huincha "PREGUNTA Y RESPONDE" (tarjeta propia, visible en todas las vistas, también en la botonera del iPad)
+  // ---------- huincha "PULSA Y RESPONDE" (tarjeta propia, visible en todas las vistas, también en la botonera del iPad)
   // Reutiliza mostrar()/ocultar(): el texto se guarda en config/graficas/huincha_pregunta/datos/texto y, al aire, en state/aire/huincha.
   var HU = "huincha_pregunta", huBuilt = false, huSucio = false;
   function huTexto() { return $("huTxt").value.replace(/\s+/g, " ").trim(); }
@@ -361,7 +361,7 @@
   function construirHuincha() {
     var top = $("top"); if (!top || huBuilt) { return; }
     var c = document.createElement("section"); c.id = "huincha";
-    c.innerHTML = '<div class="huh"><b>HUINCHA — PREGUNTA Y RESPONDE</b><span class="hustate" id="huState">Fuera del aire</span></div>' +
+    c.innerHTML = '<div class="huh"><b>HUINCHA — PULSA Y RESPONDE</b><span class="hustate" id="huState">Fuera del aire</span></div>' +
       '<textarea id="huTxt" rows="2" maxlength="400" placeholder="Escribe la pregunta…" autocomplete="off"></textarea>' +
       '<div class="acc"><button class="b-show" data-h="mostrar">MOSTRAR</button><button class="b-hide" data-h="ocultar">OCULTAR</button><button class="b-upd" data-h="actualizar">ACTUALIZAR</button><button class="b-clr" data-h="limpiar">LIMPIAR</button></div>';
     top.parentNode.insertBefore(c, top.nextSibling);
@@ -372,6 +372,9 @@
   }
   function pintarHuincha() {
     if (!huBuilt) { construirHuincha(); } if (!huBuilt) { return; }
+    var cg = tree.config && tree.config.graficas && tree.config.graficas[HU];                  // salas creadas antes del cambio de nombre: se actualiza el rótulo guardado (una sola vez)
+    if (seedOk && cg && cg.datos && cg.datos.etiqueta === "PREGUNTA Y RESPONDE") { store.set("config/graficas/" + HU + "/datos/etiqueta", "PULSA Y RESPONDE"); }
+    if (seedOk && cg && cg.nombre === "Huincha — Pregunta y responde") { store.set("config/graficas/" + HU + "/nombre", "Huincha — Pulsa y responde"); }
     var g = G(HU), t = $("huTxt"), s = $("huState"), e = st("aire", g.capa), on = !!(e && e.gid === HU), es = BP.getPath(tree, "state/estado/" + g.capa), txt = on ? "● AL AIRE" : "Fuera del aire", cls = "hustate" + (on ? " on" : "");
     if (!huSucio && document.activeElement !== t) { var v = (g.datos && g.datos.texto) || ""; if (t.value !== v) { t.value = v; } }   // sigue el borrador de otros equipos (antes de comparar)
     if (on && e.datos && e.datos.texto !== huTexto()) { txt += " · hay cambios sin actualizar"; cls += " chg"; }

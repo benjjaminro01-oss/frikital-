@@ -11,7 +11,7 @@ body.fondo-cuadros { background: repeating-conic-gradient(#3a3f4c 0% 25%, #2a2e3
 body.fondo-oscuro { background: #101820; }
 body.fondo-verde { background: #1c7a2f; }
 
-/* huincha "PREGUNTA Y RESPONDE" (capa propia; queda debajo de los GC si coinciden). Zonas seguras: texto dentro de x 196-1730 / y 860-975 */
+/* huincha "PULSA Y RESPONDE" (capa propia; queda debajo de los GC si coinciden). Zonas seguras: texto dentro de x 196-1730 / y 860-975 */
 #capa-huincha { z-index: 15; }
 .hu { position: absolute; left: 120px; right: 120px; bottom: 90px; height: 150px; font-family: "Avenir Next", "Helvetica Neue", Arial, sans-serif; }
 .hu-in { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }

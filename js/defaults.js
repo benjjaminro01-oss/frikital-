@@ -58,9 +58,9 @@
   G.pase_noticiero = { id: "pase_noticiero", nombre: "Pase al noticiero", tipo: "video", capa: "video", orden: 11, tecla: "F20", boton: true,
     datos: { medio: "PENDIENTE_VIDEO_PASE_AL_NOTICIERO", repetir: false }, entra: { tipo: "directo" }, sale: { tipo: "directo" } };
 
-  // Huincha "PREGUNTA Y RESPONDE": capa propia "huincha" (independiente de gc/logo/video). Tiene su tarjeta en el panel, por eso no va en la botonera.
-  G.huincha_pregunta = { id: "huincha_pregunta", nombre: "Huincha — Pregunta y responde", tipo: "huincha", capa: "huincha", orden: 13, tecla: "", boton: false,
-    datos: { etiqueta: "PREGUNTA Y RESPONDE", texto: "" }, entra: { tipo: "directo" }, sale: { tipo: "directo" } };
+  // Huincha "PULSA Y RESPONDE": capa propia "huincha" (independiente de gc/logo/video). Tiene su tarjeta en el panel, por eso no va en la botonera.
+  G.huincha_pregunta = { id: "huincha_pregunta", nombre: "Huincha — Pulsa y responde", tipo: "huincha", capa: "huincha", orden: 13, tecla: "", boton: false,
+    datos: { etiqueta: "PULSA Y RESPONDE", texto: "" }, entra: { tipo: "directo" }, sale: { tipo: "directo" } };
 
   // botonera por defecto: un botón por gráfica marcada con "boton", en su orden
   var slots = {}, ids = Object.keys(G).filter(function (k) { return G[k].boton; }).sort(function (a, b) { return G[a].orden - G[b].orden; });

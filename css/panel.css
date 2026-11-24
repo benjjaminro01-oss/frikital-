@@ -70,7 +70,7 @@ main { padding:10px 12px 40px; }
 @media (max-width:1000px) { #cuerpo { grid-template-columns:1fr; } #editor { position:static; } #monitores { grid-template-columns:1fr; } #escList { max-height:60vh; } }
 @media (max-width:640px) { .paso { grid-template-columns:1fr; } #tabs .tab { padding:0 10px; font-size:13px; } }
 
-/* huincha "PREGUNTA Y RESPONDE" */
+/* huincha "PULSA Y RESPONDE" */
 #huincha { margin:10px 12px 0; background:var(--panel); border:1px solid var(--line); border-left:5px solid var(--ora); border-radius:12px; padding:10px 12px 12px; }
 .huh { display:flex; align-items:center; justify-content:space-between; gap:8px 12px; flex-wrap:wrap; margin-bottom:8px; } .huh b { font-size:13px; letter-spacing:.1em; }
 .hustate { min-height:32px; display:inline-flex; align-items:center; border-radius:16px; padding:0 12px; background:#101b4f; color:var(--ice); font-size:13px; font-weight:700; }
